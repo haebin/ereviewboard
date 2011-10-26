@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension point="org.eclipse.ui.popupMenus">
+   	<objectContribution id="org.review_board.ereviewboard.subversive.ui.projectContributions"
+            objectClass="org.eclipse.core.resources.IProject"
+            adaptable="true">
+         <filter name="projectPersistentProperty"
+               value="org.eclipse.team.core.repository=org.tigris.subversion.subclipse.core.svnnature"/>
+            <action
+               class="org.review_board.ereviewboard.subversive.internal.actions.CreateReviewRequestAction"
+               id="org.review_board.ereviewboard.subversive.ui.actions.StartReview"
+               label="Create Review Request..."
+               icon="icons/reviewboard-icon.png"
+               menubarPath="team.main/group1">
+         </action>
+    </objectContribution>
+   </extension>
+   <extension
+         point="org.review_board.ereviewboard.ui.taskDiffActions">
+         <taskDiffAction
+               id="org.review_board.ereviewboard.subversive.ui.updateDiff"
+               label="Update Diff..."
+               class="org.review_board.ereviewboard.subversive.internal.actions.UpdateReviewRequestAction"/>
+         <taskDiffAction
+               id="org.review_board.ereviewboard.subversive.ui.applyDiff"
+               label="Apply Diff..."
+               class="org.review_board.ereviewboard.subversive.internal.actions.ApplyDiffAction"/>
+   </extension>
+   <extension point="org.review_board.ereviewboard.ui.scmFileContentsLocator">
+	   	<scmFileContentsLocator class="org.review_board.ereviewboard.subversive.core.internal.actions.SubversiveSCMFileContentsLocator"/>
+   </extension>
+</plugin>
