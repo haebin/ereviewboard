@@ -8,7 +8,7 @@
  * Contributors:
  *     Robert Munteanu - initial API and implementation
  *******************************************************************************/
-package org.review_board.ereviewboard.subclipse.internal.wizards;
+package org.review_board.ereviewboard.subversive.internal.wizards;
 
 import org.eclipse.core.runtime.Assert;
 import org.review_board.ereviewboard.core.client.ReviewboardClient;

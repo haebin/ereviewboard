@@ -8,7 +8,7 @@
  * Contributors:
  *     Robert Munteanu - initial API and implementation
  *******************************************************************************/
-package org.review_board.ereviewboard.subclipse.internal.actions;
+package org.review_board.ereviewboard.subversive.internal.actions;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.jface.action.IAction;
@@ -19,7 +19,7 @@ import org.eclipse.ui.IActionDelegate;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
-import org.review_board.ereviewboard.subclipse.internal.wizards.PostReviewRequestWizard;
+import org.review_board.ereviewboard.subversive.internal.wizards.PostReviewRequestWizard;
 
 /**
  * @author Robert Munteanu

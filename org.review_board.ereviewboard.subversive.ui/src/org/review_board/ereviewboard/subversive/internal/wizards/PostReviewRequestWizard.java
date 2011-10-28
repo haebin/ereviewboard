@@ -8,7 +8,7 @@
  * Contributors:
  *     Robert Munteanu - initial API and implementation
  *******************************************************************************/
-package org.review_board.ereviewboard.subclipse.internal.wizards;
+package org.review_board.ereviewboard.subversive.internal.wizards;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -25,8 +25,8 @@ import org.review_board.ereviewboard.core.client.ReviewboardClient;
 import org.review_board.ereviewboard.core.exception.ReviewboardException;
 import org.review_board.ereviewboard.core.model.Repository;
 import org.review_board.ereviewboard.core.model.ReviewRequest;
-import org.review_board.ereviewboard.subclipse.Activator;
-import org.review_board.ereviewboard.subclipse.TraceLocation;
+import org.review_board.ereviewboard.subversive.Activator;
+import org.review_board.ereviewboard.subversive.TraceLocation;
 import org.review_board.ereviewboard.ui.util.ReviewboardImages;
 import org.tigris.subversion.subclipse.core.ISVNLocalResource;
 import org.tigris.subversion.subclipse.core.ISVNRepositoryLocation;

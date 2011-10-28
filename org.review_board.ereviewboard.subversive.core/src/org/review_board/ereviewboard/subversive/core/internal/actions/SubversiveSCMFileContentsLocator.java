@@ -1,4 +1,4 @@
-package org.review_board.ereviewboard.subclipse.core.internal.actions;
+package org.review_board.ereviewboard.subversive.core.internal.actions;
 /*******************************************************************************
  * Copyright (c) 2011 Robert Munteanu and others.
  * All rights reserved. This program and the accompanying materials
@@ -24,8 +24,8 @@ import org.review_board.ereviewboard.core.internal.scm.SCMFileContentsLocator;
 import org.review_board.ereviewboard.core.model.FileDiff;
 import org.review_board.ereviewboard.core.model.Repository;
 import org.review_board.ereviewboard.core.model.RepositoryType;
-import org.review_board.ereviewboard.subclipse.core.internal.Activator;
-import org.review_board.ereviewboard.subclipse.core.internal.TraceLocation;
+import org.review_board.ereviewboard.subversive.core.internal.Activator;
+import org.review_board.ereviewboard.subversive.core.internal.TraceLocation;
 import org.tigris.subversion.subclipse.core.repo.SVNRepositoryLocation;
 import org.tigris.subversion.svnclientadapter.SVNClientException;
 import org.tigris.subversion.svnclientadapter.SVNRevision;

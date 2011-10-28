@@ -8,7 +8,7 @@
  * Contributors:
  *     Robert Munteanu - initial API and implementation
  *******************************************************************************/
-package org.review_board.ereviewboard.subclipse.internal.actions;
+package org.review_board.ereviewboard.subversive.internal.actions;
 
 import org.eclipse.compare.CompareConfiguration;
 import org.eclipse.compare.patch.ApplyPatchOperation;
@@ -25,8 +25,8 @@ import org.review_board.ereviewboard.core.exception.ReviewboardException;
 import org.review_board.ereviewboard.core.model.Repository;
 import org.review_board.ereviewboard.core.model.RepositoryType;
 import org.review_board.ereviewboard.core.util.ByteArrayStorage;
-import org.review_board.ereviewboard.subclipse.Activator;
-import org.review_board.ereviewboard.subclipse.TraceLocation;
+import org.review_board.ereviewboard.subversive.Activator;
+import org.review_board.ereviewboard.subversive.TraceLocation;
 import org.review_board.ereviewboard.ui.editor.ext.TaskDiffAction;
 
 /**

@@ -8,7 +8,7 @@
  * Contributors:
  *     Robert Munteanu - initial API and implementation
  *******************************************************************************/
-package org.review_board.ereviewboard.subclipse.internal.wizards;
+package org.review_board.ereviewboard.subversive.internal.wizards;
 
 import java.io.File;
 

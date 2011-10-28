@@ -8,7 +8,7 @@
  * Contributors:
  *     Robert Munteanu - initial API and implementation
  *******************************************************************************/
-package org.review_board.ereviewboard.subclipse.internal.wizards;
+package org.review_board.ereviewboard.subversive.internal.wizards;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -16,8 +16,8 @@ import java.io.IOException;
 import java.util.*;
 
 import org.apache.commons.io.FileUtils;
-import org.review_board.ereviewboard.subclipse.Activator;
-import org.review_board.ereviewboard.subclipse.TraceLocation;
+import org.review_board.ereviewboard.subversive.Activator;
+import org.review_board.ereviewboard.subversive.TraceLocation;
 import org.tigris.subversion.svnclientadapter.ISVNClientAdapter;
 import org.tigris.subversion.svnclientadapter.SVNClientException;
 

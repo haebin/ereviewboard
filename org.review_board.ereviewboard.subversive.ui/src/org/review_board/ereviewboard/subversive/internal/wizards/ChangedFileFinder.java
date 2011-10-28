@@ -8,14 +8,14 @@
  * Contributors:
  *     Robert Munteanu - initial API and implementation
  *******************************************************************************/
-package org.review_board.ereviewboard.subclipse.internal.wizards;
+package org.review_board.ereviewboard.subversive.internal.wizards;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.core.runtime.IPath;
-import org.review_board.ereviewboard.subclipse.Activator;
-import org.review_board.ereviewboard.subclipse.TraceLocation;
+import org.review_board.ereviewboard.subversive.Activator;
+import org.review_board.ereviewboard.subversive.TraceLocation;
 import org.tigris.subversion.subclipse.core.ISVNLocalResource;
 import org.tigris.subversion.svnclientadapter.*;
 

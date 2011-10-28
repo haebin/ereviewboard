@@ -1,4 +1,4 @@
-package org.review_board.ereviewboard.subclipse.internal.actions;
+package org.review_board.ereviewboard.subversive.internal.actions;
 
 import java.util.ArrayList;
 import java.util.List;
