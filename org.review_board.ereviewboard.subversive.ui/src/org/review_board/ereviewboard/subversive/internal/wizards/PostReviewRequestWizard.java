@@ -83,7 +83,7 @@ public class PostReviewRequestWizard extends Wizard {
             getContainer().run(false, true, new IRunnableWithProgress() {
 
                 public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
-                    
+                    /*
                     monitor.beginTask("Posting review request", 4);
 
                     SubMonitor sub;
@@ -159,6 +159,7 @@ public class PostReviewRequestWizard extends Wizard {
                     } finally {
                         monitor.done();
                     }
+                    */
                 }
             });
         } catch (InvocationTargetException e) {

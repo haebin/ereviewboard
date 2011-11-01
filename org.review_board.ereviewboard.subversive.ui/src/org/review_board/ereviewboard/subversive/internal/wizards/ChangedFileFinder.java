@@ -47,7 +47,7 @@ public class ChangedFileFinder {
     }
 
     public List<ChangedFile> findChangedFiles() throws Exception {
-    	
+/*    	
     	SVNChangeStatus[] statuses = _svnClient.getStatus(_location.toFile(), true, false);
     	
         List<ChangedFile> changedFiles = new ArrayList<ChangedFile>(statuses.length);
@@ -89,5 +89,7 @@ public class ChangedFileFinder {
         }
 		
         return changedFiles;
+*/
+    	return null;
     }
 }

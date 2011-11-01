@@ -40,7 +40,7 @@ public class DiffCreator {
     
 
     public byte[] createDiff(IResource[] selectedFiles, File rootLocation) throws Exception {
-
+    	/*
         File tmpFile = null;
 
         try {
@@ -102,5 +102,7 @@ public class DiffCreator {
         } finally {
             FileUtils.deleteQuietly(tmpFile);
         }
+        */
+    	return null;
     }
 }

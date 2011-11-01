@@ -167,7 +167,7 @@ class DetectLocalChangesPage extends WizardPage {
                 
                 public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
                 	
-                	
+                	/*                	
                     SVNTeamProvider svnProvider = (SVNTeamProvider) RepositoryProvider.getProvider(_project, SVNTeamProvider.getProvider(_project)
 							.getID());
                     
@@ -296,6 +296,7 @@ class DetectLocalChangesPage extends WizardPage {
                     } catch (Exception e) {
                         throw new InvocationTargetException(e);
                     }
+                    */
                 }
 
             });
@@ -321,11 +322,12 @@ class DetectLocalChangesPage extends WizardPage {
         
         return _selectedFiles;
     }
-    
+    /*
     public ISVNRepositoryLocation getSvnRepositoryLocation() {
 
         return svnRepositoryLocation;
     }
+    */
 
     public Repository getReviewBoardRepository() {
 
@@ -336,11 +338,13 @@ class DetectLocalChangesPage extends WizardPage {
 
         return _taskRepository;
     }
-
+    
+    /*
     void setSvnRepositoryLocation(ISVNRepositoryLocation svnRepositoryLocation) {
 
         this.svnRepositoryLocation = svnRepositoryLocation;
     }
+    */
 
     void setReviewboardClient(ReviewboardClient rbClient) {
         
