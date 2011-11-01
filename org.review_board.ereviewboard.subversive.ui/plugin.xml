@@ -6,11 +6,11 @@
             objectClass="org.eclipse.core.resources.IProject"
             adaptable="true">
          <filter name="projectPersistentProperty"
-               value="org.eclipse.team.core.repository=org.tigris.subversion.subclipse.core.svnnature"/>
+               value="org.eclipse.team.core.repository=org.eclipse.team.svn.core.svnnature"/>
             <action
                class="org.review_board.ereviewboard.subversive.internal.actions.CreateReviewRequestAction"
                id="org.review_board.ereviewboard.subversive.ui.actions.StartReview"
-               label="Create Review Request..."
+               label="Create Review Request"
                icon="icons/reviewboard-icon.png"
                menubarPath="team.main/group1">
          </action>

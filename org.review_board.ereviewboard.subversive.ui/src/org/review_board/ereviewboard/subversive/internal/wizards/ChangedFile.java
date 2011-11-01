@@ -12,7 +12,7 @@ package org.review_board.ereviewboard.subversive.internal.wizards;
 
 import java.io.File;
 
-import org.tigris.subversion.svnclientadapter.SVNStatusKind;
+import org.eclipse.team.svn.core.connector.SVNEntryStatus;
 
 /**
  * The <tt>ChangedFile</tt> represents a file which has local changes
@@ -23,18 +23,17 @@ class ChangedFile {
 
     private final File file;
 
-    private final SVNStatusKind statusKind;
+    private final SVNEntryStatus statusKind;
     
     private final String relativePath;
 
     private final String copiedFromRelativePath;
 
-    public ChangedFile(File file, SVNStatusKind statusKind, String relativePath) {
-
+    public ChangedFile(File file, SVNEntryStatus statusKind, String relativePath) {
         this(file, statusKind, relativePath, null);
     }
 
-    public ChangedFile(File file, SVNStatusKind statusKind, String relativePath, String copiedFromRelativePath) {
+    public ChangedFile(File file, SVNEntryStatus statusKind, String relativePath, String copiedFromRelativePath) {
 
         this.file = file;
         this.statusKind = statusKind;
@@ -47,7 +46,7 @@ class ChangedFile {
         return file;
     }
 
-    public SVNStatusKind getStatusKind() {
+    public SVNEntryStatus getStatusKind() {
 
         return statusKind;
     }

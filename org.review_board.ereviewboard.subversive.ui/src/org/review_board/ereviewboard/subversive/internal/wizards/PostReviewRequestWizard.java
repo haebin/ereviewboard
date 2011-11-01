@@ -10,7 +10,6 @@
  *******************************************************************************/
 package org.review_board.ereviewboard.subversive.internal.wizards;
 
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 
 import org.eclipse.core.resources.IProject;
@@ -21,19 +20,14 @@ import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.mylyn.tasks.core.TaskRepository;
 import org.eclipse.mylyn.tasks.ui.TasksUiUtil;
+import org.eclipse.team.core.RepositoryProvider;
+import org.eclipse.team.svn.core.IConnectedProjectInformation;
 import org.review_board.ereviewboard.core.client.ReviewboardClient;
-import org.review_board.ereviewboard.core.exception.ReviewboardException;
 import org.review_board.ereviewboard.core.model.Repository;
 import org.review_board.ereviewboard.core.model.ReviewRequest;
 import org.review_board.ereviewboard.subversive.Activator;
 import org.review_board.ereviewboard.subversive.TraceLocation;
 import org.review_board.ereviewboard.ui.util.ReviewboardImages;
-import org.tigris.subversion.subclipse.core.ISVNLocalResource;
-import org.tigris.subversion.subclipse.core.ISVNRepositoryLocation;
-import org.tigris.subversion.subclipse.core.SVNException;
-import org.tigris.subversion.subclipse.core.resources.SVNWorkspaceRoot;
-import org.tigris.subversion.svnclientadapter.ISVNClientAdapter;
-import org.tigris.subversion.svnclientadapter.SVNClientException;
 
 /**
  * @author Robert Munteanu
@@ -85,7 +79,6 @@ public class PostReviewRequestWizard extends Wizard {
     
     @Override
     public boolean performFinish() {
-
         try {
             getContainer().run(false, true, new IRunnableWithProgress() {
 
@@ -96,19 +89,20 @@ public class PostReviewRequestWizard extends Wizard {
                     SubMonitor sub;
                     
                     try {
-                        ISVNRepositoryLocation svnRepository = _detectLocalChangesPage.getSvnRepositoryLocation();
-                        ISVNClientAdapter svnClient = svnRepository.getSVNClient();
+                        //ISVNRepositoryLocation svnRepository = _detectLocalChangesPage.getSvnRepositoryLocation();
+                        //ISVNClientAdapter svnClient = svnRepository.getSVNClient();
                         ReviewboardClient rbClient = _context.getReviewboardClient();
                         Repository reviewBoardRepository = _detectLocalChangesPage.getReviewBoardRepository();
                         TaskRepository repository = _detectLocalChangesPage.getTaskRepository();
 
-                        ISVNLocalResource projectSvnResource = SVNWorkspaceRoot.getSVNResourceFor(_project);
+                        //ISVNLocalResource projectSvnResource = SVNWorkspaceRoot.getSVNResourceFor(_project);
+                        IConnectedProjectInformation projectSvnResource = (IConnectedProjectInformation)RepositoryProvider.getProvider(_project);
                         
                         sub = SubMonitor.convert(monitor, "Creating patch", 1);
                         
                         DiffCreator diffCreator = new DiffCreator();
                         
-                        byte[] diffContent = diffCreator.createDiff(_detectLocalChangesPage.getSelectedFiles(), _project.getLocation().toFile(), svnClient);
+                        byte[] diffContent = diffCreator.createDiff(_detectLocalChangesPage.getSelectedFiles(), _project.getLocation().toFile());
                         
                         sub.done();
                         
@@ -125,7 +119,8 @@ public class PostReviewRequestWizard extends Wizard {
                         } else {
                             reviewRequest = _reviewRequest;
                         }
-
+                        
+                        projectSvnResource.getRepositoryLocation().getRoot()
                         String basePath = projectSvnResource.getUrl().toString()
                                 .substring(svnRepository.getRepositoryRoot().toString().length());
 
@@ -159,13 +154,7 @@ public class PostReviewRequestWizard extends Wizard {
                         sub.done();
 
                         TasksUiUtil.openTask(repository, String.valueOf(reviewRequest.getId()));
-                    } catch (SVNException e) {
-                        throw new InvocationTargetException(e);
-                    } catch (IOException e) {
-                        throw new InvocationTargetException(e);
-                    } catch (SVNClientException e) {
-                        throw new InvocationTargetException(e);
-                    } catch (ReviewboardException e) {
+                    } catch (Exception e) {
                         throw new InvocationTargetException(e);
                     } finally {
                         monitor.done();

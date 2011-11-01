@@ -14,10 +14,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.core.runtime.IPath;
+import org.eclipse.team.svn.core.connector.ISVNConnector;
+import org.eclipse.team.svn.core.connector.SVNChangeStatus;
+import org.eclipse.team.svn.core.connector.SVNEntry.Kind;
+import org.eclipse.team.svn.core.connector.SVNEntryStatus;
+import org.eclipse.team.svn.core.resource.ILocalResource;
+import org.eclipse.team.svn.core.svnstorage.SVNLocalResource;
 import org.review_board.ereviewboard.subversive.Activator;
 import org.review_board.ereviewboard.subversive.TraceLocation;
-import org.tigris.subversion.subclipse.core.ISVNLocalResource;
-import org.tigris.subversion.svnclientadapter.*;
+
 
 /**
  * Finds local changes for a specified <tt>location</tt>
@@ -32,20 +37,19 @@ import org.tigris.subversion.svnclientadapter.*;
 public class ChangedFileFinder {
 
     private final IPath _location;
-    private final ISVNClientAdapter _svnClient;
-    private SVNUrl _baseUrl;
+    private final ISVNConnector _svnClient;
+    private IPath _baseUrl;
 
-    public ChangedFileFinder(ISVNLocalResource projectSvnResource, ISVNClientAdapter svnClient) {
-
+    public ChangedFileFinder(ILocalResource projectSvnResource, ISVNConnector svnClient) {
         _location = projectSvnResource.getResource().getLocation();
-        _baseUrl = projectSvnResource.getUrl();
+        _baseUrl = projectSvnResource.getResource().getLocation();
         _svnClient = svnClient;
     }
 
-    public List<ChangedFile> findChangedFiles() throws SVNClientException {
-
-        ISVNStatus[] statuses = _svnClient.getStatus(_location.toFile(), true, false);
-
+    public List<ChangedFile> findChangedFiles() throws Exception {
+    	
+    	SVNChangeStatus[] statuses = _svnClient.getStatus(_location.toFile(), true, false);
+    	
         List<ChangedFile> changedFiles = new ArrayList<ChangedFile>(statuses.length);
 
         for (ISVNStatus svnStatus : statuses) {
@@ -56,21 +60,21 @@ public class ChangedFileFinder {
                     " , conflict descriptor " + svnStatus.getConflictDescriptor() + " .");
 
             // can't generate diffs based on unversioned files
-            if ( SVNStatusKind.UNVERSIONED.equals(svnStatus.getTextStatus()) )
+            if ( SVNEntryStatus.UNVERSIONED.equals(svnStatus.getTextStatus()) )
                 continue;
 
             // skip all forms of conflicts
-            if ( SVNStatusKind.CONFLICTED.equals(svnStatus.getTextStatus()) )
+            if ( SVNEntryStatus.CONFLICTED.equals(svnStatus.getTextStatus()) )
                 continue;
             
-            if ( SVNStatusKind.CONFLICTED.equals(svnStatus.getPropStatus()) )
+            if ( SVNEntryStatus.CONFLICTED.equals(svnStatus.getPropStatus()) )
                 continue;
             
             if ( svnStatus.getConflictDescriptor() != null )
                 continue;
             
             // only consider files
-            if (!SVNNodeKind.FILE.equals(svnStatus.getNodeKind()))
+            if (!Kind.FILE == (svnStatus.getNodeKind()))
                 continue;
 
             boolean copied = svnStatus.isCopied();
@@ -83,8 +87,7 @@ public class ChangedFileFinder {
                 changedFiles.add(new ChangedFile(svnStatus.getFile(), svnStatus.getTextStatus(), relativePath, copiedFromRelativePath));
             }
         }
-
+		
         return changedFiles;
-
     }
 }

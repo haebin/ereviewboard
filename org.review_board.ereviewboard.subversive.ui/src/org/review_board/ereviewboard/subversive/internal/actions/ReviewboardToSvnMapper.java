@@ -8,68 +8,77 @@ import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.mylyn.tasks.core.TaskRepository;
 import org.eclipse.team.core.RepositoryProvider;
+import org.eclipse.team.svn.core.SVNTeamProvider;
 import org.review_board.ereviewboard.core.ReviewboardDiffMapper;
 import org.review_board.ereviewboard.core.model.FileDiff;
 import org.review_board.ereviewboard.core.model.Repository;
-import org.tigris.subversion.subclipse.core.ISVNLocalResource;
-import org.tigris.subversion.subclipse.core.SVNProviderPlugin;
-import org.tigris.subversion.subclipse.core.SVNTeamProvider;
-import org.tigris.subversion.subclipse.core.resources.SVNWorkspaceRoot;
-import org.tigris.subversion.svnclientadapter.utils.SVNUrlUtils;
 
 /**
- * The <tt>ReviewboardToSvnMapper</tt> maps between various Reviewboard items and their SVN correspondents
+ * The <tt>ReviewboardToSvnMapper</tt> maps between various Reviewboard items
+ * and their SVN correspondents
  * 
  * @author Robert Munteanu
  * 
  */
 public class ReviewboardToSvnMapper {
 
-    public IProject findProjectForRepository(Repository codeRepository, TaskRepository taskRepository, ReviewboardDiffMapper diffMapper) {
+	public IProject findProjectForRepository(Repository codeRepository,
+			TaskRepository taskRepository, ReviewboardDiffMapper diffMapper) {
 
-        IWorkspace workspace = ResourcesPlugin.getWorkspace();
+		IWorkspace workspace = ResourcesPlugin.getWorkspace();
 
-        List<IProject> candidates = new ArrayList<IProject>();
+		List<IProject> candidates = new ArrayList<IProject>();
 
-        for (IProject project : workspace.getRoot().getProjects()) {
+		for (IProject project : workspace.getRoot().getProjects()) {
+			SVNTeamProvider svnProvider = (SVNTeamProvider) RepositoryProvider
+					.getProvider(project, SVNTeamProvider.getProvider(project)
+							.getID());
 
-            SVNTeamProvider svnProvider = (SVNTeamProvider) RepositoryProvider.getProvider(project, SVNProviderPlugin.getTypeId());
+			if (svnProvider == null)
+				continue;
 
-            if (svnProvider == null)
-                continue;
+			// ISVNLocalResource projectSvnResource =
+			// SVNWorkspaceRoot.getSVNResourceFor(project);
+			// String svnRepositoryPath =
+			// projectSvnResource.getRepository().getRepositoryRoot().toString();
+			try {
+			if (codeRepository.getPath().equals(
+					project.getDescription().getLocationURI().toString()))
+				candidates.add(project);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
 
-            ISVNLocalResource projectSvnResource = SVNWorkspaceRoot.getSVNResourceFor(project);
-            String svnRepositoryPath = projectSvnResource.getRepository().getRepositoryRoot().toString();
+		if (candidates.isEmpty())
+			return null;
 
-            if (codeRepository.getPath().equals(svnRepositoryPath))
-                candidates.add(project);
-        }
+		if (candidates.size() == 1)
+			return candidates.get(0);
 
-        if (candidates.isEmpty())
-            return null;
+		// multiple choice - use the latest diff revision to match based on
+		// files
+		for (IProject project : candidates) {
 
-        if (candidates.size() == 1)
-            return candidates.get(0);
+			Integer latestDiffRevisionId = diffMapper.getLatestDiffRevisionId();
 
-        // multiple choice - use the latest diff revision to match based on files
-        for (IProject project : candidates) {
+			if (latestDiffRevisionId == null)
+				break;
 
-            Integer latestDiffRevisionId = diffMapper.getLatestDiffRevisionId();
+			// ISVNLocalResource projectSvnResource = SVNWorkspaceRoot.getSVNResourceFor(project);
+			// SVNUrlUtils.getRelativePath(projectSvnResource.getRepository().getRepositoryRoot(), projectSvnResource.getUrl(), true);
+			String projectRelativePath = project.getFullPath().toString();
 
-            if (latestDiffRevisionId == null)
-                break;
+			for (FileDiff fileDiff : diffMapper
+					.getFileDiffs(latestDiffRevisionId.intValue()))
+				if (!fileDiff.getDestinationFile().startsWith(
+						projectRelativePath))
+					break;
 
-            ISVNLocalResource projectSvnResource = SVNWorkspaceRoot.getSVNResourceFor(project);
-            String projectRelativePath = SVNUrlUtils.getRelativePath(projectSvnResource.getRepository().getRepositoryRoot(), projectSvnResource.getUrl(), true);
+			return project;
 
-            for (FileDiff fileDiff : diffMapper.getFileDiffs(latestDiffRevisionId.intValue())) 
-                if (!fileDiff.getDestinationFile().startsWith(projectRelativePath))
-                    break;
-            
-            return project;
-
-        }
-        return null;
-    }
+		}
+		return null;
+	}
 
 }

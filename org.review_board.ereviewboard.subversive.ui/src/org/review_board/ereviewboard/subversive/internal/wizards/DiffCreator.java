@@ -12,14 +12,19 @@ package org.review_board.ereviewboard.subversive.internal.wizards;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.team.svn.core.operation.local.CreatePatchOperation;
 import org.review_board.ereviewboard.subversive.Activator;
 import org.review_board.ereviewboard.subversive.TraceLocation;
-import org.tigris.subversion.svnclientadapter.ISVNClientAdapter;
-import org.tigris.subversion.svnclientadapter.SVNClientException;
+
 
 /**
  * The <tt>DiffCreator</tt> creates ReviewBoard-compatible diffs
@@ -32,8 +37,9 @@ import org.tigris.subversion.svnclientadapter.SVNClientException;
 public class DiffCreator {
 
     private static final String INDEX_MARKER = "Index:";
+    
 
-    public byte[] createDiff(Set<ChangedFile> selectedFiles, File rootLocation, ISVNClientAdapter svnClient) throws IOException, SVNClientException {
+    public byte[] createDiff(IResource[] selectedFiles, File rootLocation) throws Exception {
 
         File tmpFile = null;
 
@@ -42,15 +48,27 @@ public class DiffCreator {
 
             tmpFile = File.createTempFile("ereviewboard", "diff");
 
-            List<File> changes = new ArrayList<File>(selectedFiles.size());
+            List<File> changes = new ArrayList<File>(selectedFiles.length);
             Map<String, String> copies = new HashMap<String, String>();
-            for (ChangedFile changedFile : selectedFiles) {
-                if (changedFile.getCopiedFromPathRelativeToProject() != null)
+            for (IResource changedFile : selectedFiles) {
+                changedFile.get
+            	if (changedFile.getCopiedFromPathRelativeToProject() != null)
                     copies.put(changedFile.getPathRelativeToProject(), changedFile.getCopiedFromPathRelativeToProject());
                 changes.add(changedFile.getFile());
             }
-
-            svnClient.createPatch(changes.toArray(new File[changes.size()]), rootLocation, tmpFile, false);
+            
+            
+            IStatus status = new CreatePatchOperation(selectedFiles, tmpFile.getAbsolutePath(), true, true, true, true).run(new NullProgressMonitor()).getStatus();
+            if (!status.isOK()) {
+    			// #FIXME error handle
+            	// #TODO error handle
+            	
+    			//String trace = ReportPartsFactory.getStackTrace(operationStatus);
+    			//assertTrue(operationStatus.getMessage() + trace, false);
+    		}
+    		
+    		
+            //svnClient.createPatch(changes.toArray(new File[changes.size()]), rootLocation, tmpFile, false);
 
             List<String> patchLines = FileUtils.readLines(tmpFile);
             int replaceIndex = -1;
@@ -63,7 +81,8 @@ public class DiffCreator {
 
                 if ( line.toString().startsWith(INDEX_MARKER) ) {
                     String file = line.substring(INDEX_MARKER.length()).trim();
-
+                    
+                    
                     String copiedTo = copies.get(file);
                     if (copiedTo != null) {
                         Activator.getDefault().trace(TraceLocation.DIFF, "File " + file + " is copied to " + copiedTo + " .");

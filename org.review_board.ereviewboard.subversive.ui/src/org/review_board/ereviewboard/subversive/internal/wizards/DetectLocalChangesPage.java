@@ -27,8 +27,17 @@ import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.mylyn.tasks.core.TaskRepository;
 import org.eclipse.mylyn.tasks.ui.TasksUi;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.widgets.*;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.team.core.RepositoryProvider;
+import org.eclipse.team.svn.core.SVNTeamProvider;
+import org.eclipse.team.svn.core.resource.ILocalResource;
+import org.eclipse.team.svn.core.svnstorage.SVNRemoteStorage;
 import org.review_board.ereviewboard.core.ReviewboardClientManager;
 import org.review_board.ereviewboard.core.ReviewboardCorePlugin;
 import org.review_board.ereviewboard.core.client.ReviewboardClient;
@@ -38,11 +47,6 @@ import org.review_board.ereviewboard.core.model.RepositoryType;
 import org.review_board.ereviewboard.core.model.ReviewRequest;
 import org.review_board.ereviewboard.subversive.Activator;
 import org.review_board.ereviewboard.subversive.TraceLocation;
-import org.tigris.subversion.subclipse.core.*;
-import org.tigris.subversion.subclipse.core.resources.LocalResourceStatus;
-import org.tigris.subversion.subclipse.core.resources.SVNWorkspaceRoot;
-import org.tigris.subversion.svnclientadapter.ISVNClientAdapter;
-import org.tigris.subversion.svnclientadapter.SVNClientException;
 
 /**
  * The <tt>DetectLocalChangesPage</tt> shows the local changes
@@ -57,7 +61,7 @@ class DetectLocalChangesPage extends WizardPage {
     private final IProject _project;
     private Table _table;
     private final Set<ChangedFile> _selectedFiles = new HashSet<ChangedFile>();
-    private ISVNRepositoryLocation svnRepositoryLocation;
+    //private ISVNRepositoryLocation svnRepositoryLocation;
     private Repository _reviewBoardRepository;
     private TaskRepository _taskRepository;
     private Label _foundRbRepositoryLabel;
@@ -162,12 +166,16 @@ class DetectLocalChangesPage extends WizardPage {
             getWizard().getContainer().run(false, true, new IRunnableWithProgress() {
                 
                 public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
-                
-                    SVNTeamProvider svnProvider = (SVNTeamProvider) RepositoryProvider.getProvider(_project, SVNProviderPlugin.getTypeId());
+                	
+                	
+                    SVNTeamProvider svnProvider = (SVNTeamProvider) RepositoryProvider.getProvider(_project, SVNTeamProvider.getProvider(_project)
+							.getID());
                     
                     Assert.isNotNull(svnProvider, "No " + SVNTeamProvider.class.getSimpleName() + " for " + _project);
                     
-                    ISVNLocalResource projectSvnResource = SVNWorkspaceRoot.getSVNResourceFor(_project);
+                    SVNRemoteStorage storage = SVNRemoteStorage.instance();
+                    ILocalResource projectSvnResource = storage.asLocalResource(_project, url, kind);
+                    //ISVNLocalResource  = SVNWorkspaceRoot.getSVNResourceFor();
                     
                     ReviewboardClientManager clientManager = ReviewboardCorePlugin.getDefault().getConnector().getClientManager();
                     ReviewboardClient rbClient = null;
@@ -285,9 +293,7 @@ class DetectLocalChangesPage extends WizardPage {
                             setErrorMessage("No changes found in the repository which can be used to create a diff.");
                             return;
                         }
-                    } catch (SVNException e) {
-                        throw new InvocationTargetException(e);
-                    } catch (SVNClientException e) {
+                    } catch (Exception e) {
                         throw new InvocationTargetException(e);
                     }
                 }
@@ -297,7 +303,7 @@ class DetectLocalChangesPage extends WizardPage {
             setErrorMessage(e.getMessage());
         } catch (InterruptedException e) {
             setErrorMessage(e.getMessage());
-        } catch ( RuntimeException e ) {
+        } catch (RuntimeException e ) {
             setErrorMessage(getErrorMessage());
             Activator.getDefault().log(IStatus.ERROR, e.getMessage(), e);
         } finally {
@@ -315,12 +321,12 @@ class DetectLocalChangesPage extends WizardPage {
         
         return _selectedFiles;
     }
-
+    
     public ISVNRepositoryLocation getSvnRepositoryLocation() {
 
         return svnRepositoryLocation;
     }
-    
+
     public Repository getReviewBoardRepository() {
 
         return _reviewBoardRepository;

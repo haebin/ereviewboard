@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <?pde version="3.6"?>
 
-<target name="ereviewboard" sequenceNumber="46">
+<target name="ereviewboard" sequenceNumber="47">
 <locations>
 <location includeAllPlatforms="false" includeMode="planner" includeSource="true" type="InstallableUnit">
 <unit id="org.eclipse.mylyn_feature.feature.group" version="3.6.0.v20110608-1400"/>
@@ -46,6 +46,10 @@
 <unit id="org.polarion.eclipse.team.svn.connector.feature.group" version="2.2.2.I20110819-1700"/>
 <unit id="org.polarion.eclipse.team.svn.connector.svnkit16.feature.group" version="2.2.2.I20110819-1700"/>
 <repository location="http://community.polarion.com/projects/subversive/download/eclipse/2.0/indigo-sr1-site/"/>
+</location>
+<location includeAllPlatforms="false" includeMode="planner" includeSource="true" type="InstallableUnit">
+<unit id="junit.extensions.eclipse.quick.mock.feature.feature.group" version="0.3.0.201104252320"/>
+<repository location="http://quick-junit.sourceforge.jp/updates/current"/>
 </location>
 </locations>
 <targetJRE path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/J2SE-1.5"/>

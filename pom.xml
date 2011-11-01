@@ -16,7 +16,9 @@
     <module>org.review_board.ereviewboard.subclipse.ui</module>
     <module>org.review_board.ereviewboard.subversive</module>
     <module>org.review_board.ereviewboard.subversive.core</module>
+    <module>org.review_board.ereviewboard.subversive.core.tests</module>
     <module>org.review_board.ereviewboard.subversive.ui</module>
+    <module>org.review_board.ereviewboard.subversive.ui.tests</module>
     <module>org.review_board.ereviewboard.egit</module>
     <module>org.review_board.ereviewboard.egit.core</module>
     <module>org.review_board.ereviewboard.egit.ui</module>
