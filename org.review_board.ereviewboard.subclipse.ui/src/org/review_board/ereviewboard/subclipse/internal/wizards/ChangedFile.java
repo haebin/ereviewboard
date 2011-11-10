@@ -11,7 +11,24 @@
 package org.review_board.ereviewboard.subclipse.internal.wizards;
 
 import java.io.File;
+import java.net.URI;
+import java.util.Map;
 
+import org.eclipse.core.resources.IContainer;
+import org.eclipse.core.resources.IMarker;
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IProjectDescription;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IResourceProxy;
+import org.eclipse.core.resources.IResourceProxyVisitor;
+import org.eclipse.core.resources.IResourceVisitor;
+import org.eclipse.core.resources.IWorkspace;
+import org.eclipse.core.resources.ResourceAttributes;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.QualifiedName;
+import org.eclipse.core.runtime.jobs.ISchedulingRule;
 import org.tigris.subversion.svnclientadapter.SVNStatusKind;
 
 /**
@@ -21,85 +38,68 @@ import org.tigris.subversion.svnclientadapter.SVNStatusKind;
  */
 class ChangedFile {
 
-    private final File file;
+	private final File file;
 
-    private final SVNStatusKind statusKind;
-    
-    private final String relativePath;
+	private final SVNStatusKind statusKind;
 
-    private final String copiedFromRelativePath;
+	private final String relativePath;
 
-    public ChangedFile(File file, SVNStatusKind statusKind, String relativePath) {
+	private final String copiedFromRelativePath;
 
-        this(file, statusKind, relativePath, null);
-    }
+	public ChangedFile(File file, SVNStatusKind statusKind, String relativePath) {
 
-    public ChangedFile(File file, SVNStatusKind statusKind, String relativePath, String copiedFromRelativePath) {
+		this(file, statusKind, relativePath, null);
+	}
 
-        this.file = file;
-        this.statusKind = statusKind;
-        this.relativePath = relativePath;
-        this.copiedFromRelativePath = copiedFromRelativePath;
-    }
+	public Object clone() {
+		return null;
+	}
 
-    public File getFile() {
+	public ChangedFile(File file, SVNStatusKind statusKind, String relativePath, String copiedFromRelativePath) {
 
-        return file;
-    }
+		this.file = file;
+		this.statusKind = statusKind;
+		this.relativePath = relativePath;
+		this.copiedFromRelativePath = copiedFromRelativePath;
+	}
 
-    public SVNStatusKind getStatusKind() {
+	public File getFile() {
 
-        return statusKind;
-    }
-    
-    /**
-     * Returns the path of the changed file relative to the parent project's location in the SVN repository
-     * 
-     * <p>For instance, if the project is located at <tt>http://svn.example.com/project</tt> and the 
-     * resource at <tt>http://svn.example.com/project/dir/file.txt</tt> , the relativePath is 
-     * <tt>dir/file.txt</tt>. Note that there are not leading slashes</p>
-     * 
-     * @return the path of the changed file relative to the parent project's location in the SVN repository
-     */
-    public String getPathRelativeToProject() {
-     
-        return relativePath;
-    }
+		return file;
+	}
 
-    /**
-     * 
-     * @return the relative path of the file this file was copied from, or <code>null</code>
-     * @see #getPathRelativeToProject()
-     */
-    public String getCopiedFromPathRelativeToProject() {
+	public SVNStatusKind getStatusKind() {
 
-        return copiedFromRelativePath;
-    }
+		return statusKind;
+	}
 
-    @Override
-    public int hashCode() {
+	/**
+	 * Returns the path of the changed file relative to the parent project's
+	 * location in the SVN repository
+	 * 
+	 * <p>
+	 * For instance, if the project is located at
+	 * <tt>http://svn.example.com/project</tt> and the resource at
+	 * <tt>http://svn.example.com/project/dir/file.txt</tt> , the relativePath
+	 * is <tt>dir/file.txt</tt>. Note that there are not leading slashes
+	 * </p>
+	 * 
+	 * @return the path of the changed file relative to the parent project's
+	 *         location in the SVN repository
+	 */
+	public String getPathRelativeToProject() {
 
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((file == null) ? 0 : file.hashCode());
-        return result;
-    }
+		return relativePath;
+	}
 
-    @Override
-    public boolean equals(Object obj) {
+	/**
+	 * 
+	 * @return the relative path of the file this file was copied from, or
+	 *         <code>null</code>
+	 * @see #getPathRelativeToProject()
+	 */
+	public String getCopiedFromPathRelativeToProject() {
 
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (!(obj instanceof ChangedFile))
-            return false;
-        ChangedFile other = (ChangedFile) obj;
-        if (file == null) {
-            if (other.file != null)
-                return false;
-        } else if (!file.equals(other.file))
-            return false;
-        return true;
-    }
+		return copiedFromRelativePath;
+	}
 }

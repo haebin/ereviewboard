@@ -12,6 +12,7 @@ package org.review_board.ereviewboard.subclipse.internal.actions;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.jface.action.IAction;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.wizard.WizardDialog;
@@ -19,6 +20,7 @@ import org.eclipse.ui.IActionDelegate;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
+import org.review_board.ereviewboard.core.ReviewboardCorePlugin;
 import org.review_board.ereviewboard.subclipse.internal.wizards.PostReviewRequestWizard;
 
 /**
@@ -29,16 +31,24 @@ public class CreateReviewRequestAction implements IActionDelegate {
     private IProject currentProject;
     
     public void run(IAction action) {
-        
         if ( currentProject == null )
             return;
         
-
+        if (ReviewboardCorePlugin.getDefault().getConnector()
+				.getClientManager().getAllClientUrl().isEmpty()) {
+			// #TODO Need to check more things.
+        	// for other actions as well. (some people may have uninstalled svn client and such..)
+        	MessageDialog
+					.openWarning(
+							null,
+							"Review Request", "No [ReviewBoard Task Repositories] are defined. Please add one using the [Task Repositories View]."); //$NON-NLS-1$ //$NON-NLS-2$
+			return;
+		}
+        
         IWorkbench wb = PlatformUI.getWorkbench();
         IWorkbenchWindow win = wb.getActiveWorkbenchWindow();
         
         new WizardDialog(win.getShell(), new PostReviewRequestWizard(currentProject)).open();
-        
     }
 
     public void selectionChanged(IAction action, ISelection selection) {

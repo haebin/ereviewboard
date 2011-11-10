@@ -10,13 +10,16 @@
  *******************************************************************************/
 package org.review_board.ereviewboard.subversive.core;
 
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.junit.Test;
 import org.review_board.ereviewboard.core.model.Repository;
@@ -61,5 +64,26 @@ public class SubversiveSCMFileContentsLocatorTest {
         locator.init(codeRepository, filePath, revision);
         byte[] res = locator.getContents(null);
         assertThat(fileContents, is(new String(res)));
+    }
+    
+    @Test
+    public void testSplit() {
+        String tmp = " a (b) (c)";
+        String[] arr = tmp.split("\\(");
+        
+        assertThat(arr.length, is(3));
+        assertThat(arr[0], is(" a "));
+        assertThat(arr[1], is("b) "));
+        assertThat(arr[2], is("c)"));
+    }
+    
+    @Test
+    public void testRegex() throws Exception {
+        String contents = "  AA\r\n BB\r\nCC  ";
+        System.out.println(contents.replaceAll("\r\n", "\r\n+"));
+        
+        String filePath = File.createTempFile("test", "test").getCanonicalPath().replaceAll("\\\\", "/");
+        System.out.println(filePath);
+        
     }
 }
