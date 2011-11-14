@@ -488,6 +488,9 @@ class DetectLocalChangesPage extends WizardPage {
 						if(!proxy.getName().toString().startsWith("."))
 							allResourcesInProject.add(proxy.requestResource());
 						return false;
+					case IResource.FOLDER:
+						if(proxy.getName().toString().startsWith("."))
+							return false;
 					}
 					return true;
 				}

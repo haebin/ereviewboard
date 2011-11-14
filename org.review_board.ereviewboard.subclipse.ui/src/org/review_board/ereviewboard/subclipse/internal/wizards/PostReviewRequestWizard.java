@@ -99,8 +99,13 @@ public class PostReviewRequestWizard extends Wizard {
 						ReviewboardClient rbClient = _context.getReviewboardClient();
 						Repository reviewBoardRepository = _detectLocalChangesPage.getReviewBoardRepository();
 						TaskRepository repository = _detectLocalChangesPage.getTaskRepository();
-
+						//_project.getDefaultCharset();
+						//_project.setDefaultCharset("UTF-8", monitor);
 						ISVNLocalResource projectSvnResource = SVNWorkspaceRoot.getSVNResourceFor(_project);
+//						if (svnClient.getClass().toString().endsWith("SvnKitClientAdapter")) {
+//							projectSvnResource.setSvnProperty("svnkit:charset", "UTF-8", true);
+//							//svnResource.setSvnProperty("svnkit:charset", "UTF-8", false);
+//						}
 
 						sub = SubMonitor.convert(monitor, "Creating patch", 1);
 

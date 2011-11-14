@@ -26,6 +26,7 @@ import org.eclipse.core.resources.IResource;
 import org.tigris.subversion.subclipse.core.ISVNLocalResource;
 import org.tigris.subversion.subclipse.core.resources.SVNWorkspaceRoot;
 import org.tigris.subversion.svnclientadapter.ISVNClientAdapter;
+import org.tigris.subversion.svnclientadapter.ISVNProperty;
 
 /**
  * The <tt>DiffCreator</tt> creates ReviewBoard-compatible diffs
@@ -85,15 +86,38 @@ public class DiffCreator {
 					File file = resource.getRawLocation().toFile();
 					markFileForReview(file);
 					try {
+						if(svnClient.getClass().toString().endsWith("SvnKitClientAdapter")){
+							svnResource.setSvnProperty("svnkit:charset", "UTF-8", false);
+						}
+						
 						contents = careteDiff(svnClient, file);
+						
+						if(svnClient.getClass().toString().endsWith("SvnKitClientAdapter")){
+							svnResource.deleteSvnProperty("svnkit:charset", false);
+						}
 					} catch (Exception e) {
 						e.printStackTrace();
 					} finally {
-						unmarkFileForReview(svnClient, file);
+						// marking, charset
+						svnClient.revert(file, false);
 					}
 				} else {
-					contents = careteDiff(svnClient, resource.getRawLocation().toFile());
-
+					File file = resource.getRawLocation().toFile();
+					ISVNProperty orgProp = null;
+					if(svnClient.getClass().toString().endsWith("SvnKitClientAdapter")){
+						// store org prop
+						orgProp = svnResource.getSvnProperty("svnkit:charset");
+						svnResource.setSvnProperty("svnkit:charset", "UTF-8", false);
+					}
+					
+					contents = careteDiff(svnClient, file);
+					
+					if(svnClient.getClass().toString().endsWith("SvnKitClientAdapter")){
+						svnResource.deleteSvnProperty("svnkit:charset", false);
+						// restore org prop of svnkit:charset
+						if(orgProp != null)
+							svnResource.setSvnProperty(orgProp.getName(), orgProp.getValue(), false);
+					}
 					// normal diff
 					// svnResource.getStatus();
 					// if(svnResource.getStatus().isDeleted()) {
@@ -124,15 +148,15 @@ public class DiffCreator {
 		FileUtils.writeStringToFile(file, buffer.toString(), ENCODING);
 	}
 
-	public static void unmarkFileForReview(ISVNClientAdapter svnClient, File file) throws Exception {
-		svnClient.revert(file, false);
-	}
-
 	public static String careteDiff(ISVNClientAdapter svnClient, File file) throws Exception {
 		File tempFile = File.createTempFile("fileDiff", ".txt");
 		tempFile.deleteOnExit();
 		svnClient.diff(file, tempFile, false);
-		return FileUtils.readFileToString(tempFile, ENCODING);
+		//if(svnClient.getClass().toString().endsWith("SvnKitClientAdapter")){
+			return FileUtils.readFileToString(tempFile, ENCODING);
+		//} else {
+		//	return FileUtils.readFileToString(tempFile);
+		//}
 	}
 
 	public static String createFullDiff(IResource resource) throws Exception {
