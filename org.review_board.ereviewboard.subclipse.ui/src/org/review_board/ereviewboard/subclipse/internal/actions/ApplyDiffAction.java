@@ -50,7 +50,6 @@ public class ApplyDiffAction implements TaskDiffAction {
         this.diffRevisionId = diffRevisionId;
     }
 
-
     public boolean isEnabled() {
         
         return diffRevisionId != null && codeRepository != null && codeRepository.getTool() == RepositoryType.Subversion;

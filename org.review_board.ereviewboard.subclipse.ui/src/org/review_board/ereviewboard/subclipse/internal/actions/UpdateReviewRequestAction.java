@@ -29,7 +29,7 @@ import org.review_board.ereviewboard.core.model.RepositoryType;
 import org.review_board.ereviewboard.core.model.ReviewRequest;
 import org.review_board.ereviewboard.subclipse.Activator;
 import org.review_board.ereviewboard.subclipse.TraceLocation;
-import org.review_board.ereviewboard.subclipse.internal.wizards.PostReviewRequestWizard;
+import org.review_board.ereviewboard.subclipse.internal.wizards.ReviewRequestWizard;
 import org.review_board.ereviewboard.ui.editor.ext.TaskDiffAction;
 
 /**
@@ -85,7 +85,7 @@ public class UpdateReviewRequestAction implements TaskDiffAction {
             
             IWorkbenchWindow win = wb.getActiveWorkbenchWindow();
             
-            new WizardDialog(win.getShell(), new PostReviewRequestWizard(matchingProject, reviewRequest)).open();
+            new WizardDialog(win.getShell(), new ReviewRequestWizard(matchingProject, reviewRequest)).open();
 
             return Status.OK_STATUS;
         } catch (ReviewboardException e) {

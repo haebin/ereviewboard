@@ -1,14 +1,15 @@
 /*******************************************************************************
- * Copyright (c) 2011 Robert Munteanu and others.
+ * Copyright (c) 2011 Frederick Haebin Na and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
+ *	   Frederick Haebin Na - implementation of main features
  *     Robert Munteanu - initial API and implementation
  *******************************************************************************/
-package org.review_board.ereviewboard.subclipse.internal.wizards;
+package org.review_board.ereviewboard.subclipse.internal.common;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -26,7 +27,8 @@ import org.eclipse.core.resources.IResource;
 import org.tigris.subversion.subclipse.core.ISVNLocalResource;
 import org.tigris.subversion.subclipse.core.resources.SVNWorkspaceRoot;
 import org.tigris.subversion.svnclientadapter.ISVNClientAdapter;
-import org.tigris.subversion.svnclientadapter.ISVNProperty;
+import org.tigris.subversion.svnclientadapter.SVNRevision;
+import org.tigris.subversion.svnclientadapter.SVNUrl;
 
 /**
  * The <tt>DiffCreator</tt> creates ReviewBoard-compatible diffs
@@ -42,31 +44,41 @@ import org.tigris.subversion.svnclientadapter.ISVNProperty;
  * @author Robert Munteanu
  */
 public class DiffCreator {
-	private static final String ENCODING = "UTF-8";
+	private static String charset = Const.DEFAULT_ENCODING;
 	private static final int NORMAL = 1;
 
 	private static final String CLOSE = "\\ No newline at end of file";
 	private static final String ADDED = "+";
-	private static final String EOL = "\r\n";
 	private static final String SEPARATOR = "=================================================================== ";
 	private static final String RANGE = "@@ -0,0 +1,%d @@";
 	private static final String OLD_FILE = "--- %s\t(revision 0)";
 	private static final String NEW_FILE = "+++ %s\t(working copy)";
 	private static final String INDEX = "Index: ";
-	private static final Pattern LINE_COUNT = Pattern.compile(EOL);
+	private static final Pattern LINE_COUNT = Pattern.compile(Const.EOL);
 	private static final String REVIEW_REQ = "The author requested a review for this file without any changes. Please, review this by expanding it.";
-	private static final String COMMENT_LANG = "/* %s */" + EOL;
-	private static final String COMMENT_MARKUP = "<!-- %s -->" + EOL;
+	private static final String COMMENT_LANG = "/* %s */" + Const.EOL;
+
+	// private static final String COMMENT_MARKUP = "<!-- %s -->" + EOL;
 
 	// private static final String INDEX_MARKER = "Index:";
 
-	public static byte[] createPatch(IResource[] resources, File root, ISVNClientAdapter svnClient) throws Exception {
+	public static byte[] createPatch(ISVNClientAdapter svnClient, SVNUrl url, SVNRevision oldRev, SVNRevision newRev)
+			throws Exception {
+		File netDiffs = File.createTempFile("netDiffs", ".txt");
+		svnClient.diff(url, oldRev, newRev, netDiffs, true);
+		return FileUtils.readFileToByteArray(netDiffs);
+	}
+
+	public static byte[] createPatch(IResource[] resources, File root, ISVNClientAdapter svnClient, String charset)
+			throws Exception {
+		DiffCreator.charset = charset;
 		File rawDiffs = File.createTempFile("rawDiffs", ".txt");
+
 		rawDiffs.deleteOnExit();
 
 		BufferedWriter rawDiffsWriter = null;
 		try {
-			rawDiffsWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(rawDiffs, true), ENCODING));
+			rawDiffsWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(rawDiffs, true), charset));
 			String contents = "";
 			for (IResource resource : resources) {
 				ISVNLocalResource svnResource = SVNWorkspaceRoot.getSVNResourceFor(resource);
@@ -78,7 +90,7 @@ public class DiffCreator {
 					// create a full diff //svnResource.getStatus().isCopied();
 					contents = createFullDiff(resource);
 
-				} else if (svnResource.getStatus().getStatusKind().toInt() == NORMAL) {
+				} else if (svnResource.getStatus().getStatusKind().toInt() == NORMAL || svnResource.getStatus().getTextStatus().toInt() == NORMAL) {
 					// add change to files. (add nill comment or blank spaces in
 					// order to make it as a review target file)
 
@@ -86,15 +98,20 @@ public class DiffCreator {
 					File file = resource.getRawLocation().toFile();
 					markFileForReview(file);
 					try {
-						if(svnClient.getClass().toString().endsWith("SvnKitClientAdapter")){
-							svnResource.setSvnProperty("svnkit:charset", "UTF-8", false);
-						}
-						
-						contents = careteDiff(svnClient, file);
-						
-						if(svnClient.getClass().toString().endsWith("SvnKitClientAdapter")){
-							svnResource.deleteSvnProperty("svnkit:charset", false);
-						}
+						// // #FIXME if you set -Dfile.encoding=UTF-8 you don't
+						// // need below code.
+						// if(svnClient.getClass().toString().endsWith("SvnKitClientAdapter")){
+						// svnResource.setSvnProperty("svnkit:charset", charset,
+						// false);
+						// }
+
+						contents = createDiff(svnClient, file);
+						// // #FIXME if you set -Dfile.encoding=UTF-8 you don't
+						// // need below code.
+						// if(svnClient.getClass().toString().endsWith("SvnKitClientAdapter")){
+						// svnResource.deleteSvnProperty("svnkit:charset",
+						// false);
+						// }
 					} catch (Exception e) {
 						e.printStackTrace();
 					} finally {
@@ -103,26 +120,26 @@ public class DiffCreator {
 					}
 				} else {
 					File file = resource.getRawLocation().toFile();
-					ISVNProperty orgProp = null;
-					if(svnClient.getClass().toString().endsWith("SvnKitClientAdapter")){
-						// store org prop
-						orgProp = svnResource.getSvnProperty("svnkit:charset");
-						svnResource.setSvnProperty("svnkit:charset", "UTF-8", false);
-					}
 					
-					contents = careteDiff(svnClient, file);
-					
-					if(svnClient.getClass().toString().endsWith("SvnKitClientAdapter")){
-						svnResource.deleteSvnProperty("svnkit:charset", false);
-						// restore org prop of svnkit:charset
-						if(orgProp != null)
-							svnResource.setSvnProperty(orgProp.getName(), orgProp.getValue(), false);
-					}
-					// normal diff
-					// svnResource.getStatus();
-					// if(svnResource.getStatus().isDeleted()) {
-					// svnResource.getStatus();
-					// //svnResource.getStatus().isCopied();
+					// // #FIXME if you set -Dfile.encoding=UTF-8 you don't need
+					// // below code.
+					// ISVNProperty orgProp = null;
+					// if(svnClient.getClass().toString().endsWith("SvnKitClientAdapter")){
+					// // store org prop
+					// orgProp = svnResource.getSvnProperty("svnkit:charset");
+					// svnResource.setSvnProperty("svnkit:charset", charset,
+					// false);
+					// }
+
+					contents = createDiff(svnClient, file);
+					// // #FIXME if you set -Dfile.encoding=UTF-8 you don't need
+					// // below code.
+					// if(svnClient.getClass().toString().endsWith("SvnKitClientAdapter")){
+					// svnResource.deleteSvnProperty("svnkit:charset", false);
+					// // restore org prop of svnkit:charset
+					// if(orgProp != null)
+					// svnResource.setSvnProperty(orgProp.getName(),
+					// orgProp.getValue(), false);
 					// }
 				}
 				rawDiffsWriter.write(contents);
@@ -138,37 +155,37 @@ public class DiffCreator {
 	}
 
 	public static void markFileForReview(File file) throws Exception {
-		String contents = FileUtils.readFileToString(file, ENCODING);
+		String contents = FileUtils.readFileToString(file, charset);
 		StringBuffer buffer = new StringBuffer();
 
 		// String extension =
 		// file.getName().substring(file.getName().lastIndexOf(".")).toLowerCase();
 		buffer.append(String.format(COMMENT_LANG, REVIEW_REQ));
 		buffer.append(contents);
-		FileUtils.writeStringToFile(file, buffer.toString(), ENCODING);
+		FileUtils.writeStringToFile(file, buffer.toString(), charset);
 	}
 
-	public static String careteDiff(ISVNClientAdapter svnClient, File file) throws Exception {
+	public static String createDiff(ISVNClientAdapter svnClient, File file) throws Exception {
 		File tempFile = File.createTempFile("fileDiff", ".txt");
 		tempFile.deleteOnExit();
 		svnClient.diff(file, tempFile, false);
-		//if(svnClient.getClass().toString().endsWith("SvnKitClientAdapter")){
-			return FileUtils.readFileToString(tempFile, ENCODING);
-		//} else {
-		//	return FileUtils.readFileToString(tempFile);
-		//}
+		// if(svnClient.getClass().toString().endsWith("SvnKitClientAdapter")){
+		return FileUtils.readFileToString(tempFile, charset);
+		// } else {
+		// return FileUtils.readFileToString(tempFile);
+		// }
 	}
 
 	public static String createFullDiff(IResource resource) throws Exception {
 		StringBuffer buffer = new StringBuffer();
 		String filePath = resource.getRawLocation().toString();
 
-		buffer.append(INDEX).append(filePath).append(EOL);
-		buffer.append(SEPARATOR).append(EOL);
-		buffer.append(String.format(OLD_FILE, filePath)).append(EOL);
-		buffer.append(String.format(NEW_FILE, filePath)).append(EOL);
+		buffer.append(INDEX).append(filePath).append(Const.EOL);
+		buffer.append(SEPARATOR).append(Const.EOL);
+		buffer.append(String.format(OLD_FILE, filePath)).append(Const.EOL);
+		buffer.append(String.format(NEW_FILE, filePath)).append(Const.EOL);
 
-		String fileContents = FileUtils.readFileToString(resource.getRawLocation().toFile(), ENCODING).trim();
+		String fileContents = FileUtils.readFileToString(resource.getRawLocation().toFile(), charset).trim();
 		if (fileContents.length() == 0)
 			return "";
 
@@ -177,10 +194,10 @@ public class DiffCreator {
 		while (m.find())
 			lineCount++;
 
-		buffer.append(String.format(RANGE, lineCount)).append(EOL);
-		buffer.append(ADDED).append(m.replaceAll("\r\n+")).append(EOL);
+		buffer.append(String.format(RANGE, lineCount)).append(Const.EOL);
+		buffer.append(ADDED).append(m.replaceAll("\r\n+")).append(Const.EOL);
 
-		buffer.append(CLOSE).append(EOL);
+		buffer.append(CLOSE).append(Const.EOL);
 
 		return buffer.toString();
 	}
@@ -194,12 +211,12 @@ public class DiffCreator {
 		BufferedWriter writer = null;
 		String rootPath = root.getAbsolutePath().replaceAll("\\\\", "/") + "/";
 		try {
-			reader = new BufferedReader(new InputStreamReader(new FileInputStream(rawDiffs), ENCODING));
-			writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(allDiffs), ENCODING));
+			reader = new BufferedReader(new InputStreamReader(new FileInputStream(rawDiffs), charset));
+			writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(allDiffs), charset));
 			String line = null;
 			while ((line = reader.readLine()) != null) {
 				if (line.startsWith(INDEX)) {
-					writer.write(line.replaceFirst(rootPath, "") + EOL);
+					writer.write(line.replaceFirst(rootPath, "") + Const.EOL);
 				} else if (line.startsWith("---") || line.startsWith("+++")) {
 					String[] arr = line.split("\\(");
 					arr[0] = arr[0].replaceFirst(rootPath, "");
@@ -209,9 +226,9 @@ public class DiffCreator {
 						tmpLine = tmpLine + arr[2];
 					else
 						tmpLine = tmpLine + arr[1];
-					writer.write(tmpLine + EOL);
+					writer.write(tmpLine + Const.EOL);
 				} else {
-					writer.write(line + EOL);
+					writer.write(line + Const.EOL);
 				}
 			}
 		} catch (Exception e) {
@@ -223,6 +240,7 @@ public class DiffCreator {
 		return FileUtils.readFileToByteArray(allDiffs);
 	}
 
+// #TODO figure out why we need to handle copied resources. -_ -;; duh
 //	public byte[] createDiffOld(IResource[] selectedFiles, File rootLocation, ISVNClientAdapter svnClient)
 //			throws Exception {
 //

@@ -1,34 +1,18 @@
 /*******************************************************************************
- * Copyright (c) 2011 Robert Munteanu and others.
+ * Copyright (c) 2011 Frederick Haebin Na and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
+ *	   Frederick Haebin Na - implementation of main features
  *     Robert Munteanu - initial API and implementation
  *******************************************************************************/
-package org.review_board.ereviewboard.subclipse.internal.wizards;
+package org.review_board.ereviewboard.subclipse.internal.common;
 
 import java.io.File;
-import java.net.URI;
-import java.util.Map;
 
-import org.eclipse.core.resources.IContainer;
-import org.eclipse.core.resources.IMarker;
-import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IProjectDescription;
-import org.eclipse.core.resources.IResource;
-import org.eclipse.core.resources.IResourceProxy;
-import org.eclipse.core.resources.IResourceProxyVisitor;
-import org.eclipse.core.resources.IResourceVisitor;
-import org.eclipse.core.resources.IWorkspace;
-import org.eclipse.core.resources.ResourceAttributes;
-import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IPath;
-import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.QualifiedName;
-import org.eclipse.core.runtime.jobs.ISchedulingRule;
 import org.tigris.subversion.svnclientadapter.SVNStatusKind;
 
 /**
@@ -36,7 +20,7 @@ import org.tigris.subversion.svnclientadapter.SVNStatusKind;
  * 
  * @author Robert Munteanu
  */
-class ChangedFile {
+public class ChangedFile {
 
 	private final File file;
 

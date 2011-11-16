@@ -1,3 +1,14 @@
+/*******************************************************************************
+ * Copyright (c) 2011 Frederick Haebin Na and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ *
+ * Contributors:
+ *	   Frederick Haebin Na - implementation of main features
+ *     Subclipse Team
+ *******************************************************************************/
 package org.review_board.ereviewboard.subclipse.ui.util;
 
 import java.util.ArrayList;
@@ -116,8 +127,9 @@ public class SelectionTree extends Composite {
 		if (resources != null) {
 			Arrays.sort(resources, comparator);
 			resourceList = new ArrayList();
-			
-			// #FIXME the default is showing only files with diffs. so the following logic is insanely stupid.
+
+			// #FIXME the default is showing only files with diffs. so the
+			// following logic is insanely stupid.
 			// #FIXME do it in the other way around.
 			unmodifiedResourceList = new HashSet();
 			try {
@@ -125,7 +137,7 @@ public class SelectionTree extends Composite {
 					IResource resource = resources[i];
 					ISVNLocalResource svnResource = SVNWorkspaceRoot.getSVNResourceFor(resource);
 					statusMap.put(resource, svnResource.getStatus());
-					
+
 					resourceList.add(resource);
 					if (SVNStatusKind.NORMAL.equals(svnResource.getStatus().getTextStatus())) {
 						unmodifiedResourceList.add(resource);
@@ -509,7 +521,7 @@ public class SelectionTree extends Composite {
 			rootFolders = null;
 			folders = null;
 			refresh();
-			//checkUnmodified(tree.getItems(), true);
+			// checkUnmodified(tree.getItems(), true);
 			includeUnmodified = true;
 		} catch (Exception e) {
 			SVNUIPlugin.openError(getShell(), null, null, e);
@@ -745,10 +757,10 @@ public class SelectionTree extends Composite {
 						image = syncLabelProvider.getImage(element);
 					if (element instanceof IContainer)
 						return image;
-//					if (unmodifiedResourceList.contains(element)) {
-//						image = resourceSelectionTreeDecorator.getImage(image,
-//								ResourceSelectionTreeDecorator.UNVERSIONED);
-//					}
+					// if (unmodifiedResourceList.contains(element)) {
+					// image = resourceSelectionTreeDecorator.getImage(image,
+					// ResourceSelectionTreeDecorator.UNVERSIONED);
+					// }
 					if (statusKind != null && statusKind.equals(SVNStatusKind.MISSING)) {
 						image = resourceSelectionTreeDecorator.getImage(image, ResourceSelectionTreeDecorator.MISSING);
 					}

@@ -21,7 +21,7 @@ import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.review_board.ereviewboard.core.ReviewboardCorePlugin;
-import org.review_board.ereviewboard.subclipse.internal.wizards.PostReviewRequestWizard;
+import org.review_board.ereviewboard.subclipse.internal.wizards.ReviewRequestWizard;
 
 /**
  * @author Robert Munteanu
@@ -48,7 +48,7 @@ public class CreateReviewRequestAction implements IActionDelegate {
         IWorkbench wb = PlatformUI.getWorkbench();
         IWorkbenchWindow win = wb.getActiveWorkbenchWindow();
         
-        new WizardDialog(win.getShell(), new PostReviewRequestWizard(currentProject)).open();
+        new WizardDialog(win.getShell(), new ReviewRequestWizard(currentProject)).open();
     }
 
     public void selectionChanged(IAction action, ISelection selection) {

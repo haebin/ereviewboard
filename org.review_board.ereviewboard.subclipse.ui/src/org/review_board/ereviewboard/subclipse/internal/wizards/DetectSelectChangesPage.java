@@ -1,11 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2011 Robert Munteanu and others.
+ * Copyright (c) 2011 Frederick Haebin Na and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
+ *	   Frederick Haebin Na - implementation of main features
  *     Robert Munteanu - initial API and implementation
  *******************************************************************************/
 package org.review_board.ereviewboard.subclipse.internal.wizards;
@@ -13,11 +14,6 @@ package org.review_board.ereviewboard.subclipse.internal.wizards;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.eclipse.compare.CompareConfiguration;
-import org.eclipse.compare.CompareUI;
-import org.eclipse.compare.CompareViewerSwitchingPane;
-import org.eclipse.core.resources.IFile;
-import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceProxy;
 import org.eclipse.core.resources.IResourceProxyVisitor;
@@ -33,22 +29,17 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.jface.viewers.CheckStateChangedEvent;
 import org.eclipse.jface.viewers.CheckboxTreeViewer;
-import org.eclipse.jface.viewers.DoubleClickEvent;
 import org.eclipse.jface.viewers.ICheckStateListener;
-import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
-import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
-import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.mylyn.tasks.core.TaskRepository;
 import org.eclipse.mylyn.tasks.ui.TasksUi;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.SashForm;
+import org.eclipse.swt.events.MouseEvent;
+import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
@@ -59,21 +50,16 @@ import org.review_board.ereviewboard.core.ReviewboardCorePlugin;
 import org.review_board.ereviewboard.core.client.ReviewboardClient;
 import org.review_board.ereviewboard.core.model.Repository;
 import org.review_board.ereviewboard.core.model.RepositoryType;
-import org.review_board.ereviewboard.core.model.ReviewRequest;
 import org.review_board.ereviewboard.subclipse.Activator;
 import org.review_board.ereviewboard.subclipse.TraceLocation;
+import org.review_board.ereviewboard.subclipse.internal.common.Const;
+import org.review_board.ereviewboard.subclipse.internal.common.ReviewRequestContext;
 import org.review_board.ereviewboard.subclipse.ui.util.SelectionTree;
 import org.tigris.subversion.subclipse.core.ISVNLocalResource;
-import org.tigris.subversion.subclipse.core.ISVNRepositoryLocation;
-import org.tigris.subversion.subclipse.core.SVNException;
 import org.tigris.subversion.subclipse.core.SVNProviderPlugin;
 import org.tigris.subversion.subclipse.core.SVNTeamProvider;
 import org.tigris.subversion.subclipse.core.resources.SVNWorkspaceRoot;
-import org.tigris.subversion.subclipse.ui.ISVNUIConstants;
 import org.tigris.subversion.subclipse.ui.Policy;
-import org.tigris.subversion.subclipse.ui.SVNUIPlugin;
-import org.tigris.subversion.subclipse.ui.compare.SVNLocalCompareInput;
-import org.tigris.subversion.svnclientadapter.SVNRevision;
 
 /**
  * The <tt>DetectLocalChangesPage</tt> shows the local changes
@@ -83,139 +69,203 @@ import org.tigris.subversion.svnclientadapter.SVNRevision;
  * request.
  * </p>
  * 
+ * @author Frederick Haebin Na
  * @author Robert Munteanu
  * 
  */
-class DetectLocalChangesPage extends WizardPage {
+class DetectSelectChangesPage extends WizardPage {
 
-	private final IProject project;
-	// private final HashMap<IResource, ResourceStatus> allStatusesInProject =
-	// new HashMap<IResource, ResourceStatus>();
-	private final List<IResource> allResourcesInProject = new LinkedList<IResource>();
-	// private final List<IResource> modifiedResourcesInProject = new
-	// LinkedList<IResource>();
+	private List<IResource> allResourcesInProject = new LinkedList<IResource>();
 
-	private ISVNRepositoryLocation svnRepositoryLocation;
-	private Repository reviewBoardRepository;
-	private TaskRepository taskRepository;
 	private IResource[] selectedResources;
 
-	private final CreateReviewRequestWizardContext context;
-	private final ReviewRequest reviewRequest;
+	private ReviewRequestContext context;
 
 	private Button includeAllButton;
-	private Button showCompareButton;
+	private Button postCommitButton;
+	private Button preCommitButton;
+	// private Button showCompareButton;
 
-	private CompareViewerSwitchingPane compareViewerPane;
+	// private CompareViewerSwitchingPane compareViewerPane;
 	private Action includeAllAction;
 
 	private boolean includeAll = false;
-	private boolean showCompare;
+	// private boolean showCompare;
 
-	private SashForm verticalSash;
-	private SashForm horizontalSash;
+	// private SashForm verticalSash;
+	// private SashForm horizontalSash;
 
 	private SelectionTree resourceSelectionTree;
+	
+	private boolean initialUpdateAccess = false;
 
-	public DetectLocalChangesPage(IProject project, CreateReviewRequestWizardContext context,
-			ReviewRequest reviewRequest) {
-
-		super("Detect local changes", "Detect local changes", null);
-
+	public DetectSelectChangesPage(ReviewRequestContext context) {
+		super("Select changes", "Select changes", null);
 		setMessage(
 				"Select the changes to submit for review. The ReviewBoard instance and the SVN repository have been auto-detected.",
 				IMessageProvider.INFORMATION);
-		this.project = project;
 		this.context = context;
-		this.reviewRequest = reviewRequest;
-
 		initMetaData();
 	}
 
 	public void createControl(Composite parent) {
-		horizontalSash = new SashForm(parent, SWT.HORIZONTAL);
-		horizontalSash.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-
-		verticalSash = new SashForm(horizontalSash, SWT.VERTICAL);
-		// verticalSash.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true,
+		// horizontalSash = new SashForm(parent, SWT.HORIZONTAL);
+		// horizontalSash.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true,
 		// true));
 
-		GridLayout gridLayout = new GridLayout();
-		gridLayout.marginHeight = 0;
-		gridLayout.marginWidth = 0;
-		verticalSash.setLayout(gridLayout);
-		verticalSash.setLayoutData(new GridData(GridData.FILL_BOTH));
+		// verticalSash = new SashForm(horizontalSash, SWT.VERTICAL);
 
-		Composite cTop = new Composite(verticalSash, SWT.NULL);
-		GridLayout topLayout = new GridLayout();
-		topLayout.marginHeight = 0;
-		topLayout.marginWidth = 0;
-		cTop.setLayout(topLayout);
-		cTop.setLayoutData(new GridData(GridData.FILL_BOTH));
+		// GridLayout gridLayout = new GridLayout();
+		// gridLayout.marginHeight = 0;
+		// gridLayout.marginWidth = 0;
+		// verticalSash.setLayout(gridLayout);
+		// verticalSash.setLayoutData(new GridData(GridData.FILL_BOTH));
 
-		Composite cBottom = new Composite(verticalSash, SWT.NULL);
-		GridLayout bottomLayout = new GridLayout();
-		bottomLayout.marginHeight = 0;
-		bottomLayout.marginWidth = 0;
-		cBottom.setLayout(bottomLayout);
-		cBottom.setLayoutData(new GridData(GridData.FILL_BOTH));
+		// Composite cTop = new Composite(horizontalSash, SWT.NULL);
+		// GridLayout topLayout = new GridLayout();
+		// topLayout.marginHeight = 0;
+		// topLayout.marginWidth = 0;
+		// cTop.setLayout(topLayout);
+		// cTop.setLayoutData(new GridData(GridData.FILL_BOTH));
 
-		addResourcesArea(cBottom);
-		compareViewerPane = new CompareViewerSwitchingPane(horizontalSash, SWT.BORDER | SWT.FLAT) {
-			protected Viewer getViewer(Viewer oldViewer, Object input) {
-				CompareConfiguration cc = new CompareConfiguration();
-				cc.setLeftEditable(false);
-				cc.setRightEditable(false);
-				return CompareUI.findContentViewer(oldViewer, input, this, cc);
-			}
-		};
-		compareViewerPane.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-
-		int vWeight1 = 15;
-		int vWeight2 = 85;
-
-		int hWeight1 = 35;
-		int hWeight2 = 65;
-
-		if (!showCompare) {
-			horizontalSash.setMaximizedControl(verticalSash);
-		} else {
-			showCompareButton.setSelection(true);
-		}
-
-		verticalSash.setWeights(new int[] { vWeight1, vWeight2 });
-		horizontalSash.setWeights(new int[] { hWeight1, hWeight2 });
+		// Composite cBottom = new Composite(verticalSash, SWT.NULL);
+		// GridLayout bottomLayout = new GridLayout();
+		// bottomLayout.marginHeight = 0;
+		// bottomLayout.marginWidth = 0;
+		// cBottom.setLayout(bottomLayout);
+		// cBottom.setLayoutData(new GridData(GridData.FILL_BOTH));
 
 		// **************************************************
 
-		Composite layout = new Composite(cTop, SWT.NONE);
+		Composite body = new Composite(parent, SWT.NONE);
+		GridLayoutFactory.swtDefaults().numColumns(1).applyTo(body);
 
+		Composite layout = new Composite(body, SWT.NONE);
 		GridLayoutFactory.swtDefaults().numColumns(2).applyTo(layout);
 
 		Label rbRepositoryLabel = new Label(layout, SWT.NONE);
 		rbRepositoryLabel.setText("Reviewboard repository :");
 
 		Label foundRbRepositoryLabel = new Label(layout, SWT.NONE);
-		foundRbRepositoryLabel.setText(getTaskRepository().getRepositoryLabel());
-		foundRbRepositoryLabel.setToolTipText(getTaskRepository().getRepositoryUrl());
+		foundRbRepositoryLabel.setText(context.getTaskRepository().getRepositoryLabel());
+		foundRbRepositoryLabel.setToolTipText(context.getTaskRepository().getRepositoryUrl());
 
 		Label svnRepositoryLabel = new Label(layout, SWT.NONE);
 		svnRepositoryLabel.setText("SVN repository :");
 
 		Label foundSvnRepositoryLabel = new Label(layout, SWT.NONE);
-		foundSvnRepositoryLabel.setText(getReviewBoardRepository().getName());
-		foundSvnRepositoryLabel.setToolTipText(getReviewBoardRepository().getPath());
-
-		if (reviewRequest != null) {
+		foundSvnRepositoryLabel.setText(context.getReviewboardRepository().getName());
+		foundSvnRepositoryLabel.setToolTipText(context.getReviewboardRepository().getPath());
+		if (context.getReviewRequest() != null) {
 			Label reviewRequestLabel = new Label(layout, SWT.NONE);
 			reviewRequestLabel.setText("Review request :");
 
 			Label reviewRequestName = new Label(layout, SWT.NONE);
-			reviewRequestName.setText(reviewRequest.getSummary());
+			reviewRequestName.setText(context.getReviewRequest().getSummary());
 		}
+
+		// GridLayoutFactory.swtDefaults().numColumns(2).applyTo(layout);
+		// bottom
+		// Composite controls = new Composite(ctop, SWT.NONE);
+		// GridLayoutFactory.swtDefaults().numColumns(2).applyTo(controls);
+		//
+		preCommitButton = new Button(layout, SWT.RADIO);
+		preCommitButton.setText("Pre-Commit Review");
+		preCommitButton.addMouseListener(new MouseListener() {
+			public void mouseDoubleClick(MouseEvent e) {
+			}
+
+			public void mouseDown(MouseEvent e) {
+			}
+
+			public void mouseUp(MouseEvent e) {
+				// TODO Auto-generated method stub
+				setPreCommitReview();
+				getContainer().updateButtons();
+			}
+
+		});
+
+		postCommitButton = new Button(layout, SWT.RADIO);
+		postCommitButton.setText("Post-Commit Review");
+		postCommitButton.addMouseListener(new MouseListener() {
+			public void mouseDoubleClick(MouseEvent e) {
+			}
+
+			public void mouseDown(MouseEvent e) {
+			}
+
+			public void mouseUp(MouseEvent e) {
+				setPostCommitReview();
+				getContainer().updateButtons();
+			}
+		});
+
+		// Composite resource = new Composite(layout, SWT.NONE);
+		// GridDataFactory.fillDefaults().span(2, 1).hint(500, 400).grab(true,
+		// true).applyTo(layout);
+
+		addResourcesArea(body);
+		// compareViewerPane = new CompareViewerSwitchingPane(horizontalSash,
+		// SWT.BORDER | SWT.FLAT) {
+		// protected Viewer getViewer(Viewer oldViewer, Object input) {
+		// CompareConfiguration cc = new CompareConfiguration();
+		// cc.setLeftEditable(false);
+		// cc.setRightEditable(false);
+		// return CompareUI.findContentViewer(oldViewer, input, this, cc);
+		// }
+		// };
+		// compareViewerPane.setLayoutData(new GridData(SWT.FILL, SWT.FILL,
+		// true, true));
+
+		// int vWeight1 = 20;
+		// int vWeight2 = 80;
+		//
+		// int hWeight1 = 35;
+		// int hWeight2 = 65;
+		//
+		// if (showCompare) {
+		// showCompareButton.setSelection(true);
+		// } else {
+		// //horizontalSash.setMaximizedControl(verticalSash);
+		// }
+		//
+		// //verticalSash.setWeights(new int[] { vWeight1, vWeight2 });
+		// horizontalSash.setWeights(new int[] { hWeight1, hWeight2 });
+
 		// this is pretty important. if you don't do it properly this page will
 		// remain in the next page.
-		setControl(horizontalSash);
+		// setControl(horizontalSash);
+		setControl(body);
+
+		if (context.getReviewRequest() != null) {
+			String[] parts = context.getReviewRequest().getDescription().split(Const.INFO_POST_COMMIT);
+			// if it was a post-commit review
+			if (parts.length > 1) {
+				setPostCommitReview();
+				// parse old, new rev.
+				String strOldNew = parts[1].split("\\.")[0];
+				String[] arrOldNew = strOldNew.split(" to ");
+
+				String oldRev = arrOldNew[0].trim();
+				String newRev = arrOldNew[1].trim();
+
+				context.setOldRevision(Long.parseLong(oldRev));
+				context.setNewRevision(Long.parseLong(newRev));
+				initialUpdateAccess = true;
+			}
+		}
+	}
+
+	private void setEnableRecursively(Control ctrl, boolean enabled) {
+		if (ctrl instanceof Composite) {
+			Composite comp = (Composite) ctrl;
+			comp.setEnabled(enabled);
+			for (Control c : comp.getChildren())
+				setEnableRecursively(c, enabled);
+		} else {
+			ctrl.setEnabled(enabled);
+		}
 	}
 
 	private void addResourcesArea(Composite composite) {
@@ -241,23 +291,25 @@ class DetectLocalChangesPage extends WizardPage {
 							}
 						});
 				toolbarManager.add(new Separator());
-				toolbarManager.add(new ControlContribution("showCompare") {
-					protected Control createControl(Composite parent) {
-						showCompareButton = new Button(parent, SWT.TOGGLE | SWT.FLAT);
-						showCompareButton.setImage(SVNUIPlugin.getImage(ISVNUIConstants.IMG_SYNCPANE)); //$NON-NLS-1$
-						showCompareButton.setToolTipText(Policy.bind("CommitDialog.showCompare"));
-						showCompareButton.setSelection(showCompare);
-						showCompareButton.addSelectionListener(new SelectionListener() {
-							public void widgetSelected(SelectionEvent e) {
-								showComparePane(!showCompare);
-							}
-
-							public void widgetDefaultSelected(SelectionEvent e) {
-							}
-						});
-						return showCompareButton;
-					}
-				});
+				// toolbarManager.add(new ControlContribution("showCompare") {
+				// protected Control createControl(Composite parent) {
+				// showCompareButton = new Button(parent, SWT.TOGGLE |
+				// SWT.FLAT);
+				//						showCompareButton.setImage(SVNUIPlugin.getImage(ISVNUIConstants.IMG_SYNCPANE)); //$NON-NLS-1$
+				// showCompareButton.setToolTipText(Policy.bind("CommitDialog.showCompare"));
+				// showCompareButton.setSelection(showCompare);
+				// showCompareButton.addSelectionListener(new
+				// SelectionListener() {
+				// public void widgetSelected(SelectionEvent e) {
+				// showComparePane(!showCompare);
+				// }
+				//
+				// public void widgetDefaultSelected(SelectionEvent e) {
+				// }
+				// });
+				// return showCompareButton;
+				// }
+				// });
 			}
 
 			public int getControlCount() {
@@ -273,7 +325,7 @@ class DetectLocalChangesPage extends WizardPage {
 		resourceSelectionTree = new SelectionTree(
 				composite,
 				SWT.NONE,
-				Policy.bind("GenerateSVNDiff.Changes"), allResourcesInProject.toArray(new IResource[0]), /*new HashMap(),*/ null, true, toolbarControlCreator, null); //$NON-NLS-1$
+				Policy.bind("GenerateSVNDiff.Changes"), allResourcesInProject.toArray(new IResource[0]), /*new HashMap(),*/null, true, toolbarControlCreator, null); //$NON-NLS-1$
 		// if (!resourceSelectionTree.showIncludeUnversionedButton())
 		// includeAllButton.setVisible(false);
 
@@ -304,23 +356,27 @@ class DetectLocalChangesPage extends WizardPage {
 				getContainer().updateButtons();
 			}
 		});
-		resourceSelectionTree.getTreeViewer().addDoubleClickListener(new IDoubleClickListener() {
-			public void doubleClick(DoubleClickEvent event) {
-				IStructuredSelection sel = (IStructuredSelection) event.getSelection();
-				Object sel0 = sel.getFirstElement();
-				if (sel0 instanceof IFile) {
-					final ISVNLocalResource localResource = SVNWorkspaceRoot.getSVNResourceFor((IFile) sel0);
-					try {
-
-						setCompareInput(new SVNLocalCompareInput(localResource, SVNRevision.BASE, true));
-						showComparePane(true);
-						showCompareButton.setSelection(true);
-
-					} catch (SVNException e1) {
-					}
-				}
-			}
-		});
+		// resourceSelectionTree.getTreeViewer().addDoubleClickListener(new
+		// IDoubleClickListener() {
+		// public void doubleClick(DoubleClickEvent event) {
+		// IStructuredSelection sel = (IStructuredSelection)
+		// event.getSelection();
+		// Object sel0 = sel.getFirstElement();
+		// if (sel0 instanceof IFile) {
+		// final ISVNLocalResource localResource =
+		// SVNWorkspaceRoot.getSVNResourceFor((IFile) sel0);
+		// try {
+		//
+		// setCompareInput(new SVNLocalCompareInput(localResource,
+		// SVNRevision.BASE, true));
+		// //showComparePane(true);
+		// showCompareButton.setSelection(true);
+		//
+		// } catch (SVNException e1) {
+		// }
+		// }
+		// }
+		// });
 
 		// if (!includeAll) {
 		// resourceSelectionTree.removeUnversioned();
@@ -356,15 +412,15 @@ class DetectLocalChangesPage extends WizardPage {
 		getContainer().updateButtons();
 	}
 
-	public void showComparePane(boolean showCompare) {
-		this.showCompare = showCompare;
-		if (showCompare) {
-			horizontalSash.setMaximizedControl(null);
-		} else {
-			horizontalSash.setMaximizedControl(verticalSash);
-		}
-
-	}
+	// public void showComparePane(boolean showCompare) {
+	// this.showCompare = showCompare;
+	// if (showCompare) {
+	// horizontalSash.setMaximizedControl(null);
+	// } else {
+	// //horizontalSash.setMaximizedControl(verticalSash);
+	// }
+	//
+	// }
 
 	private Action[] getCustomOptions() {
 		includeAllAction = new Action("Show all files", SWT.TOGGLE) {
@@ -380,22 +436,50 @@ class DetectLocalChangesPage extends WizardPage {
 		return customOptionArray;
 	}
 
-	private void setCompareInput(final SVNLocalCompareInput input) {
-		try {
-			input.run(null);
-		} catch (Exception e) {
-			e.printStackTrace();
+	// private void setCompareInput(final SVNLocalCompareInput input) {
+	// try {
+	// input.run(null);
+	// } catch (Exception e) {
+	// e.printStackTrace();
+	// }
+	// compareViewerPane.setInput(input.getCompareResult());
+	// }
+
+	@Override
+	public void setVisible(boolean visible) {
+		super.setVisible(visible);
+		// if there are no local changes then show publish review request
+		// directly.
+		if ((selectedResources.length == 0 && !postCommitButton.getSelection()) || (context.getNewRevision() != -1 && initialUpdateAccess)) {
+			setPostCommitReview();
+			getWizard().getContainer().showPage(getNextPage());
+			initialUpdateAccess = false;
 		}
-		compareViewerPane.setInput(input.getCompareResult());
+
+		// else if(context.getReviewType() == Const.REVIEW_POST_COMMIT) {
+		// setPostCommitReview();
+		// }
+	}
+
+	private void setPostCommitReview() {
+		postCommitButton.setSelection(true);
+		context.setReviewType(Const.REVIEW_POST_COMMIT);
+		setEnableRecursively(resourceSelectionTree, false);
+	}
+
+	private void setPreCommitReview() {
+		preCommitButton.setSelection(true);
+		context.setReviewType(Const.REVIEW_PRE_COMMIT);
+		setEnableRecursively(resourceSelectionTree, true);
 	}
 
 	private void initMetaData() {
-		SVNTeamProvider svnProvider = (SVNTeamProvider) RepositoryProvider.getProvider(project,
+		SVNTeamProvider svnProvider = (SVNTeamProvider) RepositoryProvider.getProvider(context.getProject(),
 				SVNProviderPlugin.getTypeId());
 
-		Assert.isNotNull(svnProvider, "No " + SVNTeamProvider.class.getSimpleName() + " for " + project);
+		Assert.isNotNull(svnProvider, "No " + SVNTeamProvider.class.getSimpleName() + " for " + context.getProject());
 
-		ISVNLocalResource projectSvnResource = SVNWorkspaceRoot.getSVNResourceFor(project);
+		ISVNLocalResource projectSvnResource = SVNWorkspaceRoot.getSVNResourceFor(context.getProject());
 
 		ReviewboardClientManager clientManager = ReviewboardCorePlugin.getDefault().getConnector().getClientManager();
 
@@ -403,10 +487,11 @@ class DetectLocalChangesPage extends WizardPage {
 		Repository reviewBoardRepository = null;
 		TaskRepository taskRepository = null;
 
-		setSvnRepositoryLocation(projectSvnResource.getRepository());
+		context.setSvnRepositoryLocation(projectSvnResource.getRepository());
+		// setSvnRepositoryLocation(projectSvnResource.getRepository());
 
 		Activator.getDefault().trace(TraceLocation.MAIN,
-				"Local repository is " + getSvnRepositoryLocation().getRepositoryRoot().toString());
+				"Local repository is " + context.getSvnRepositoryLocation().getRepositoryRoot().toString());
 
 		List<String> clientUrls = clientManager.getAllClientUrl();
 		if (clientUrls.isEmpty()) {
@@ -461,7 +546,7 @@ class DetectLocalChangesPage extends WizardPage {
 
 				hasSvnRepos = true;
 
-				if (getSvnRepositoryLocation().getRepositoryRoot().toString().equals(repository.getPath())) {
+				if (context.getSvnRepositoryLocation().getRepositoryRoot().toString().equals(repository.getPath())) {
 					reviewBoardRepository = repository;
 					taskRepository = repositoryCandidate;
 					rbClient = client;
@@ -475,21 +560,20 @@ class DetectLocalChangesPage extends WizardPage {
 			return;
 		}
 
-		setReviewboardClient(rbClient);
-		setReviewboardRepository(reviewBoardRepository);
-		setTaskRepository(taskRepository);
+		context.setReviewboardClient(rbClient);
+		context.setReviewboardRepository(reviewBoardRepository);
+		context.setTaskRepository(taskRepository);
 
 		try {
-			project.accept(new IResourceProxyVisitor() {
+			context.getProject().accept(new IResourceProxyVisitor() {
 				public boolean visit(IResourceProxy proxy) {
-
 					switch (proxy.getType()) {
 					case IResource.FILE:
-						if(!proxy.getName().toString().startsWith("."))
+						if (!proxy.getName().toString().startsWith("."))
 							allResourcesInProject.add(proxy.requestResource());
 						return false;
 					case IResource.FOLDER:
-						if(proxy.getName().toString().startsWith("."))
+						if (proxy.getName().toString().startsWith("."))
 							return false;
 					}
 					return true;
@@ -507,47 +591,17 @@ class DetectLocalChangesPage extends WizardPage {
 
 	@Override
 	public boolean isPageComplete() {
-		return super.isPageComplete() && getTaskRepository() != null && getReviewBoardRepository() != null
-				&& getSelectedFiles().length > 0;
+		return super.isPageComplete() && context.getTaskRepository() != null
+				&& context.getReviewboardRepository() != null
+				&& (getSelectedFiles().length > 0 || postCommitButton.getSelection());
 	}
 
 	public IResource[] getSelectedFiles() {
-
 		return selectedResources;
 	}
 
-	public ISVNRepositoryLocation getSvnRepositoryLocation() {
-
-		return svnRepositoryLocation;
+	public boolean isPostCommitReview() {
+		return postCommitButton.getSelection();
 	}
 
-	public Repository getReviewBoardRepository() {
-
-		return reviewBoardRepository;
-	}
-
-	public TaskRepository getTaskRepository() {
-
-		return taskRepository;
-	}
-
-	void setSvnRepositoryLocation(ISVNRepositoryLocation svnRepositoryLocation) {
-
-		this.svnRepositoryLocation = svnRepositoryLocation;
-	}
-
-	void setReviewboardClient(ReviewboardClient rbClient) {
-
-		context.setReviewboardClient(rbClient);
-	}
-
-	void setReviewboardRepository(Repository reviewBoardRepository) {
-
-		this.reviewBoardRepository = reviewBoardRepository;
-	}
-
-	void setTaskRepository(TaskRepository taskRepository) {
-
-		this.taskRepository = taskRepository;
-	}
 }
