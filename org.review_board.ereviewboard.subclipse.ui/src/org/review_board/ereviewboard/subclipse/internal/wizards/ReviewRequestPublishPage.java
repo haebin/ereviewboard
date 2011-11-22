@@ -372,8 +372,8 @@ class ReviewRequestPublishPage extends WizardPage {
 							oldRevision = _context.getOldRevision();
 						}
 						
-						int start = 0;
-						int end = 0;
+						int start = -1;
+						int end = -1;
 						for (ISVNLogMessage log : logs) {
 							int idx = 0;
 							TableItem item = new TableItem(_context.getLogsTable(), SWT.NONE);
