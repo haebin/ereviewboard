@@ -37,11 +37,30 @@
  *******************************************************************************/
 package org.review_board.ereviewboard.core.client;
 
-import static org.review_board.ereviewboard.core.client.ReviewboardQueryBuilder.*;
+import static org.review_board.ereviewboard.core.client.ReviewboardQueryBuilder.PATH_DIFFS;
+import static org.review_board.ereviewboard.core.client.ReviewboardQueryBuilder.PATH_DIFF_COMMENTS;
+import static org.review_board.ereviewboard.core.client.ReviewboardQueryBuilder.PATH_DRAFT;
+import static org.review_board.ereviewboard.core.client.ReviewboardQueryBuilder.PATH_FILES;
+import static org.review_board.ereviewboard.core.client.ReviewboardQueryBuilder.PATH_GROUPS;
+import static org.review_board.ereviewboard.core.client.ReviewboardQueryBuilder.PATH_INFO;
+import static org.review_board.ereviewboard.core.client.ReviewboardQueryBuilder.PATH_REPLIES;
+import static org.review_board.ereviewboard.core.client.ReviewboardQueryBuilder.PATH_REPOSITORIES;
+import static org.review_board.ereviewboard.core.client.ReviewboardQueryBuilder.PATH_REVIEWS;
+import static org.review_board.ereviewboard.core.client.ReviewboardQueryBuilder.PATH_REVIEW_REQUESTS;
+import static org.review_board.ereviewboard.core.client.ReviewboardQueryBuilder.PATH_SCREENSHOTS;
+import static org.review_board.ereviewboard.core.client.ReviewboardQueryBuilder.PATH_SCREENSHOT_COMMENTS;
+import static org.review_board.ereviewboard.core.client.ReviewboardQueryBuilder.PATH_USERS;
 
 import java.io.UnsupportedEncodingException;
-import java.util.*;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 
+import org.apache.commons.httpclient.HttpClient;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
@@ -52,7 +71,21 @@ import org.review_board.ereviewboard.core.ReviewboardCorePlugin;
 import org.review_board.ereviewboard.core.exception.ReviewboardException;
 import org.review_board.ereviewboard.core.exception.ReviewboardObjectDoesNotExistException;
 import org.review_board.ereviewboard.core.exception.ReviewboardResourceNotFoundException;
-import org.review_board.ereviewboard.core.model.*;
+import org.review_board.ereviewboard.core.model.Diff;
+import org.review_board.ereviewboard.core.model.DiffComment;
+import org.review_board.ereviewboard.core.model.DiffData;
+import org.review_board.ereviewboard.core.model.FileDiff;
+import org.review_board.ereviewboard.core.model.Repository;
+import org.review_board.ereviewboard.core.model.Review;
+import org.review_board.ereviewboard.core.model.ReviewGroup;
+import org.review_board.ereviewboard.core.model.ReviewReply;
+import org.review_board.ereviewboard.core.model.ReviewRequest;
+import org.review_board.ereviewboard.core.model.ReviewRequestDraft;
+import org.review_board.ereviewboard.core.model.ReviewRequestStatus;
+import org.review_board.ereviewboard.core.model.Screenshot;
+import org.review_board.ereviewboard.core.model.ScreenshotComment;
+import org.review_board.ereviewboard.core.model.ServerInfo;
+import org.review_board.ereviewboard.core.model.User;
 
 /**
  * RESTful implementation of {@link ReviewboardClient}.
@@ -86,7 +119,7 @@ public class RestfulReviewboardClient implements ReviewboardClient {
 
         refreshRepositorySettings(repository);
     }
-
+ 
     public ReviewboardClientData getClientData() {
         
         synchronized ( clientDataSync ) {
@@ -246,7 +279,8 @@ public class RestfulReviewboardClient implements ReviewboardClient {
             @Override
             protected PagedResult<User> doLoadInternal(int start, int maxResults, IProgressMonitor monitor) throws ReviewboardException {
                 
-            	ReviewboardQueryBuilder queryBuilder = new ReviewboardQueryBuilder().descend(PATH_USERS).paginate(start, maxResults);
+            	System.out.println("a");
+                ReviewboardQueryBuilder queryBuilder = new ReviewboardQueryBuilder().descend(PATH_USERS).paginate(start, maxResults);
                 
                 return reviewboardReader.readUsers(httpClient.executeGet(queryBuilder.createQuery(), monitor));
             }
@@ -396,11 +430,11 @@ public class RestfulReviewboardClient implements ReviewboardClient {
                 // users usually outnumber groups and repositories
                 // try to get good progress reporting by approximating the ratios
                 // repositories with small data sets will not need very accurate progress reporting anyway
-                clientData.setUsers(getUsers(Policy.subMonitorFor(monitor, 90)));
+                //clientData.setUsers(getUsers(Policy.subMonitorFor(monitor, 90)));
                 
-                clientData.setGroups(getReviewGroups(Policy.subMonitorFor(monitor, 5)));
+                //clientData.setGroups(getReviewGroups(Policy.subMonitorFor(monitor, 5)));
             
-                clientData.setRepositories(getRepositories(Policy.subMonitorFor(monitor, 4)));
+                //clientData.setRepositories(getRepositories(Policy.subMonitorFor(monitor, 4)));
                 
                 clientData.setTimeZone(getTimeZone(Policy.subMonitorFor(monitor, 1)));
             
@@ -627,5 +661,9 @@ public class RestfulReviewboardClient implements ReviewboardClient {
         ReviewboardQueryBuilder builder = new ReviewboardQueryBuilder().descend(PATH_REVIEW_REQUESTS, reviewRequestId).descend(PATH_REVIEWS, draftReview.getId());
         
         httpClient.executeDelete(builder.createQuery(), monitor);
+    }
+
+    public HttpClient getHttpClient() {
+        return httpClient.getHttpClient();
     }
 }

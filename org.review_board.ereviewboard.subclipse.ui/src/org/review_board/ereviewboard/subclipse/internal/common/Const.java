@@ -11,7 +11,7 @@ public class Const {
 
 	public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
 
-	public static final Pattern PATTERN_BUG_ID = Pattern.compile("\\[([^\\].]*)\\]");
+	public static final Pattern[] PATTERN_BUGID = { Pattern.compile("\\[([^\\].]*)\\]"),  Pattern.compile("#([a-zA-Z0-9]+)") };
 
 	public static final int PAGING_LOG = 25;
 
@@ -22,4 +22,6 @@ public class Const {
 	public static final String CONTENTS_DIV = Const.EOL + Const.EOL + Const.EOL + "--------------------------------------------------"
 			+ Const.EOL;
 	public static final String INFO_POST_COMMIT = "Post-commit review for diff from revision ";
+	
+	public static final int MIN_KEY_SIZE = 1;
 }

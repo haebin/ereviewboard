@@ -40,11 +40,23 @@ package org.review_board.ereviewboard.core.client;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.commons.httpclient.HttpClient;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.mylyn.tasks.core.TaskRepository;
 import org.review_board.ereviewboard.core.exception.ReviewboardException;
-import org.review_board.ereviewboard.core.model.*;
+import org.review_board.ereviewboard.core.model.Diff;
+import org.review_board.ereviewboard.core.model.DiffComment;
+import org.review_board.ereviewboard.core.model.DiffData;
+import org.review_board.ereviewboard.core.model.FileDiff;
+import org.review_board.ereviewboard.core.model.Repository;
+import org.review_board.ereviewboard.core.model.Review;
+import org.review_board.ereviewboard.core.model.ReviewReply;
+import org.review_board.ereviewboard.core.model.ReviewRequest;
+import org.review_board.ereviewboard.core.model.ReviewRequestDraft;
+import org.review_board.ereviewboard.core.model.ReviewRequestStatus;
+import org.review_board.ereviewboard.core.model.Screenshot;
+import org.review_board.ereviewboard.core.model.ScreenshotComment;
 
 /**
  * Interface for Review Board operations.
@@ -80,6 +92,8 @@ public interface ReviewboardClient {
     byte[] getRawFileDiff(int reviewRequestId, int diffRevision, int fileId, IProgressMonitor monitor) throws ReviewboardException;
     
     List<Review> getReviews(int reviewRequestId, IProgressMonitor monitor) throws ReviewboardException;
+    
+    HttpClient getHttpClient();
     
     /**
      * @param reviewRequestId

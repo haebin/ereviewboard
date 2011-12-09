@@ -96,8 +96,9 @@ class DetectSelectChangesPage extends WizardPage {
 	// private SashForm horizontalSash;
 
 	private SelectionTree resourceSelectionTree;
-	
+
 	private boolean initialUpdateAccess = false;
+	private boolean loadedForTheFirst = false;
 
 	public DetectSelectChangesPage(ReviewRequestContext context) {
 		super("Select changes", "Select changes", null);
@@ -180,6 +181,15 @@ class DetectSelectChangesPage extends WizardPage {
 
 			public void mouseUp(MouseEvent e) {
 				// TODO Auto-generated method stub
+				if (!loadedForTheFirst) {
+					resourceSelectionTree.setResources(allResourcesInProject.toArray(new IResource[0]));
+					loadedForTheFirst = true;
+					// selectedResources =
+					// resourceSelectionTree.getSelectedResources();
+					// includeAll = includeAllButton.getSelection();
+					// includeAllAction.setChecked(includeAll);
+					toggleIncludeAll();
+				}
 				setPreCommitReview();
 				getContainer().updateButtons();
 			}
@@ -316,16 +326,13 @@ class DetectSelectChangesPage extends WizardPage {
 				return 1;
 			}
 		};
-
 		// resourceSelectionTree = new ResourceSelectionTree(
 		// composite,
 		// SWT.NONE,
 		//				Policy.bind("GenerateSVNDiff.Changes"), resourcesToCommit, statusMap, null, true, toolbarControlCreator, syncInfoSet); //$NON-NLS-1$
 
-		resourceSelectionTree = new SelectionTree(
-				composite,
-				SWT.NONE,
-				Policy.bind("GenerateSVNDiff.Changes"), allResourcesInProject.toArray(new IResource[0]), /*new HashMap(),*/null, true, toolbarControlCreator, null); //$NON-NLS-1$
+		resourceSelectionTree = new SelectionTree(composite, SWT.NONE,
+				Policy.bind("GenerateSVNDiff.Changes"), /*allResourcesInProject.toArray(new IResource[0]),*//* new HashMap(), */null, true, toolbarControlCreator, null); //$NON-NLS-1$
 		// if (!resourceSelectionTree.showIncludeUnversionedButton())
 		// includeAllButton.setVisible(false);
 
@@ -387,7 +394,8 @@ class DetectSelectChangesPage extends WizardPage {
 		// resourceSelectionTree.addUnversioned();
 		// #FIXME this is stupid. make the diff set as the default.
 		// #FIXME don't do this. this is stupid.
-		resourceSelectionTree.removeUnmodified();
+
+		// resourceSelectionTree.removeUnmodified();
 		this.includeAll = false;
 		selectedResources = resourceSelectionTree.getSelectedResources();
 	}
@@ -450,7 +458,11 @@ class DetectSelectChangesPage extends WizardPage {
 		super.setVisible(visible);
 		// if there are no local changes then show publish review request
 		// directly.
-		if ((selectedResources.length == 0 && !postCommitButton.getSelection()) || (context.getNewRevision() != -1 && initialUpdateAccess)) {
+		// #TODO selectedResources.length is always 0 now at this point since it
+		// takes too long time to load.
+		// #TODO so, this page is always skipped.
+		if ((selectedResources.length == 0 && !postCommitButton.getSelection())
+				|| (context.getNewRevision() != -1 && initialUpdateAccess)) {
 			setPostCommitReview();
 			getWizard().getContainer().showPage(getNextPage());
 			initialUpdateAccess = false;
@@ -527,8 +539,7 @@ class DetectSelectChangesPage extends WizardPage {
 			try {
 				client.updateRepositoryData(false, new NullProgressMonitor());
 			} catch (Exception e) {
-				// #FIXME handle error
-				e.printStackTrace();
+				MessageDialog.openWarning(getShell(), "Review Request", "ReviewBoard Error:" + e.getMessage());
 			}
 
 			Activator.getDefault().trace(
@@ -573,7 +584,10 @@ class DetectSelectChangesPage extends WizardPage {
 							allResourcesInProject.add(proxy.requestResource());
 						return false;
 					case IResource.FOLDER:
-						if (proxy.getName().toString().startsWith("."))
+						if (proxy.getName().toString().startsWith(".")
+								|| proxy.getName().toString().equals("deploy")
+								|| proxy.getName().toString().equals("target")
+								|| proxy.getName().toString().equals("bin"))
 							return false;
 					}
 					return true;
@@ -585,7 +599,8 @@ class DetectSelectChangesPage extends WizardPage {
 			// .getSVNClient());
 			// modifiedResourcesInProject = changeFinder.findChangedFiles();
 		} catch (Exception e) {
-			e.printStackTrace();
+			MessageDialog.openError(getShell(), "Review Request",
+					"Error occured while reading local resouces:" + e.getMessage());
 		}
 	}
 

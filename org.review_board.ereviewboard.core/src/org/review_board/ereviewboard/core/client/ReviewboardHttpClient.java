@@ -78,6 +78,10 @@ public class ReviewboardHttpClient {
         this.location = location;
         this.httpClient = createAndInitHttpClient(characterEncoding);
     }
+    
+    public HttpClient getHttpClient() {
+        return this.httpClient;
+    }
 
     private HttpClient createAndInitHttpClient(String characterEncoding) {
         HttpClient httpClient = new HttpClient(WebUtil.getConnectionManager());

@@ -11,19 +11,27 @@
  *******************************************************************************/
 package org.review_board.ereviewboard.subclipse.internal.wizards;
 
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.methods.GetMethod;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Platform;
+import org.eclipse.core.runtime.preferences.IEclipsePreferences;
+import org.eclipse.core.runtime.preferences.IPreferencesService;
 import org.eclipse.jface.dialogs.IMessageProvider;
-import org.eclipse.jface.fieldassist.AutoCompleteField;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.fieldassist.TextContentAdapter;
 import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.BusyIndicator;
+import org.eclipse.swt.events.KeyEvent;
+import org.eclipse.swt.events.KeyListener;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.MouseEvent;
@@ -38,12 +46,15 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.review_board.ereviewboard.core.model.ReviewGroup;
 import org.review_board.ereviewboard.core.model.ReviewRequest;
 import org.review_board.ereviewboard.core.model.User;
 import org.review_board.ereviewboard.subclipse.Activator;
 import org.review_board.ereviewboard.subclipse.internal.common.Const;
 import org.review_board.ereviewboard.subclipse.internal.common.ReviewRequestContext;
+import org.review_board.ereviewboard.subclipse.ui.util.TargetAutoCompleteField;
 import org.tigris.subversion.subclipse.core.ISVNLocalResource;
 import org.tigris.subversion.subclipse.core.resources.SVNWorkspaceRoot;
 import org.tigris.subversion.svnclientadapter.ISVNClientAdapter;
@@ -57,18 +68,20 @@ import org.tigris.subversion.svnclientadapter.SVNRevision;
  */
 class ReviewRequestPublishPage extends WizardPage {
 
-	private AutoCompleteField _toUserComboAutoCompleteField;
-	private AutoCompleteField _toGroupComboAutoCompleteField;
+	private TargetAutoCompleteField _toUserComboAutoCompleteField;
+	private TargetAutoCompleteField _toGroupComboAutoCompleteField;
 	private ReviewRequest reviewRequest = new ReviewRequest();
 	// private Table table;
 	private boolean populated = false;
 	private ISVNLogMessage topLog = null;
 	private final ReviewRequestContext _context;
 	private int tableRowIndex = 0;
-	
+
 	private Button moreButton;
 	private Button resetButton;
 	private String labelReset = "Selection Reset";
+
+	// private IPreferencesService service = Platform.getPreferencesService();
 
 	public ReviewRequestPublishPage(ReviewRequestContext context) {
 
@@ -79,10 +92,10 @@ class ReviewRequestPublishPage extends WizardPage {
 				IMessageProvider.INFORMATION);
 
 		_context = context;
-
 	}
 
 	public void createControl(Composite parent) {
+
 		Composite layout = new Composite(parent, SWT.NONE);
 
 		GridLayoutFactory.fillDefaults().numColumns(2).applyTo(layout);
@@ -90,32 +103,116 @@ class ReviewRequestPublishPage extends WizardPage {
 		newLabel(layout, "Reviewer:");
 
 		final Text toUserText = newText(layout);
-
-		_toUserComboAutoCompleteField = new AutoCompleteField(toUserText, new TextContentAdapter(), new String[] {});
-
+		// get default in order to avoid sending queries to the server
+		toUserText.setText(Platform.getPreferencesService().getRootNode().get("ereviewboard.previous.reviewer", ""));
 		
+		_toUserComboAutoCompleteField = new TargetAutoCompleteField(toUserText, new TextContentAdapter(),
+				new String[] {});
+		toUserText.addKeyListener(new KeyListener() {
+			public void keyReleased(KeyEvent e) {
+				String userText = toUserText.getText().trim();
+				if (toUserText.getText() == null || userText.length() < Const.MIN_KEY_SIZE || userText.endsWith(","))
+					return;
+
+				String[] args = userText.split(",");
+				String arg = args[args.length - 1].trim();
+
+				if (arg.length() < Const.MIN_KEY_SIZE)
+					return;
+
+				String[] resultNames = null;
+				try {
+					HttpClient hc = _context.getReviewboardClient().getHttpClient();
+					GetMethod method = new GetMethod(_context.getTaskRepository().getUrl()
+							+ "/api/users/?limit=10&fullname=1&timestamp=" + System.currentTimeMillis() + "&q="
+							+ URLEncoder.encode(arg.trim(), "UTF-8"));
+					int resCode = hc.executeMethod(method);
+					JSONObject res = new JSONObject(method.getResponseBodyAsString());
+					JSONArray arr = res.getJSONArray("users");
+					resultNames = new String[arr.length()];
+					String korName = "";
+					String nickName = "";
+					String compId = "";
+					for (int i = 0; i < arr.length(); i++) {
+						JSONObject nameset = arr.getJSONObject(i);
+						korName = nameset.getString("first_name").trim().equals("") ? "" : nameset
+								.getString("first_name") + " ";
+						nickName = nameset.getString("last_name").trim().equals("") ? "" : nameset
+								.getString("last_name") + " ";
+						compId = nameset.getString("username") + " ";
+						resultNames[i] = korName + nickName + compId;
+					}
+				} catch (Exception ex) {
+					// #TODO handle excepton properly
+					ex.printStackTrace();
+				}
+				_toUserComboAutoCompleteField.setProposals(resultNames);
+
+			}
+
+			public void keyPressed(KeyEvent e) {
+			}
+		});
 
 		newLabel(layout, "(Or Group):");
-
 		final Text toGroupText = newText(layout);
+		// get default in order to avoid sending queries to the server
+		toGroupText.setText(Platform.getPreferencesService().getRootNode().get("ereviewboard.previous.group", ""));
+		_toGroupComboAutoCompleteField = new TargetAutoCompleteField(toGroupText, new TextContentAdapter(),
+				new String[] {});
+		toGroupText.addKeyListener(new KeyListener() {
+			public void keyReleased(KeyEvent e) {
+				String userText = toGroupText.getText().trim();
+				if (toGroupText.getText() == null || userText.length() < Const.MIN_KEY_SIZE || userText.endsWith(","))
+					return;
 
-		_toGroupComboAutoCompleteField = new AutoCompleteField(toGroupText, new TextContentAdapter(), new String[] {});
+				String[] args = userText.split(",");
+				String arg = args[args.length - 1].trim();
 
-		
+				if (arg.length() < Const.MIN_KEY_SIZE)
+					return;
+
+				String[] resultNames = null;
+				try {
+					HttpClient hc = _context.getReviewboardClient().getHttpClient();
+					GetMethod method = new GetMethod(_context.getTaskRepository().getUrl()
+							+ "/api/groups/?limit=10&displayname=1&timestamp=" + System.currentTimeMillis() + "&q="
+							+ URLEncoder.encode(arg.trim(), "UTF-8"));
+					int resCode = hc.executeMethod(method);
+					JSONObject res = new JSONObject(method.getResponseBodyAsString());
+					JSONArray arr = res.getJSONArray("groups");
+					resultNames = new String[arr.length()];
+					String korName = "";
+					String compId = "";
+					for (int i = 0; i < arr.length(); i++) {
+						JSONObject nameset = arr.getJSONObject(i);
+						korName = nameset.getString("display_name").trim().equals("") ? "" : nameset
+								.getString("display_name") + " ";
+						compId = nameset.getString("name") + " ";
+						resultNames[i] = korName + compId;
+					}
+				} catch (Exception ex) {
+					// #TODO handle excepton properly
+					ex.printStackTrace();
+				}
+				_toGroupComboAutoCompleteField.setProposals(resultNames);
+			}
+
+			public void keyPressed(KeyEvent e) {
+			}
+		});
 
 		newLabel(layout, "Summary:");
 
 		final Text summary = newText(layout);
-		
-		
+		summary.setText(Platform.getPreferencesService().getRootNode().get("ereviewboard.previous.summary", ""));
+
 		newLabel(layout, "Description:");
 
 		final Text description = newMultilineText(layout);
 
-		
-
 		newLabel(layout, "");
-		newLabel(layout, "Select commit logs to add to descripton. '[ID]' will be parsed as bug IDs.");
+		newLabel(layout, "Select commit logs to add to descripton. [ID], #ID will be parsed as bug IDs.");
 		moreButton = new Button(layout, SWT.NONE);
 		moreButton.setText("More ▶");
 		moreButton.addMouseListener(new MouseListener() {
@@ -136,7 +233,6 @@ class ReviewRequestPublishPage extends WizardPage {
 		resetButton = new Button(layout, SWT.NONE);
 		resetButton.setText(labelReset);
 		resetButton.addMouseListener(new MouseListener() {
-
 			public void mouseDoubleClick(MouseEvent e) {
 			}
 
@@ -174,35 +270,27 @@ class ReviewRequestPublishPage extends WizardPage {
 			}
 
 		});
-		_context.getLogsTable().setLinesVisible(true);
-		_context.getLogsTable().setHeaderVisible(true);
 
-		GridDataFactory.fillDefaults().span(2, 1).hint(500, 400).grab(true, true).applyTo(_context.getLogsTable());
+		GridDataFactory.fillDefaults().span(2, 1).hint(500, 400).applyTo(_context.getLogsTable());
 
 		TableColumn revisionColumn = new TableColumn(_context.getLogsTable(), SWT.NONE);
-		revisionColumn.setText("Revision");
+		revisionColumn.setText("Rev");
+		// revisionColumn.setWidth(20);
 
 		TableColumn commentColumn = new TableColumn(_context.getLogsTable(), SWT.NONE);
 		commentColumn.setText("Comment");
+		commentColumn.setWidth(250);
 
 		TableColumn dateColumn = new TableColumn(_context.getLogsTable(), SWT.NONE);
 		dateColumn.setText("Date");
+		// dateColumn.setWidth(100);
 
 		TableColumn authorColumn = new TableColumn(_context.getLogsTable(), SWT.NONE);
 		authorColumn.setText("Author");
+		// authorColumn.setWidth(100);
 
-		// newLabel(layout, "Branch:");
-		//
-		// final Text branch = newText(layout);
-		// branch.addModifyListener(new ModifyListener() {
-		//
-		// public void modifyText(ModifyEvent e) {
-		//
-		// reviewRequest.setBranch(branch.getText());
-		//
-		// getContainer().updateButtons();
-		// }
-		// });
+		_context.getLogsTable().setLinesVisible(true);
+		_context.getLogsTable().setHeaderVisible(true);
 
 		// newLabel(layout, "Testing done:");
 		//
@@ -218,8 +306,8 @@ class ReviewRequestPublishPage extends WizardPage {
 		// }
 		// });
 		setControl(layout);
-		
-		if(_context.getReviewRequest() != null) {
+
+		if (_context.getReviewRequest() != null) {
 			reviewRequest = _context.getReviewRequest();
 			ReviewRequest req = _context.getReviewRequest();
 			toUserText.setText(req.getTargetPeopleText());
@@ -227,7 +315,7 @@ class ReviewRequestPublishPage extends WizardPage {
 			summary.setText(req.getSummary());
 			description.setText(req.getDescription().split(Const.CONTENTS_DIV)[0]);
 		}
-		
+
 		toUserText.addModifyListener(new ModifyListener() {
 
 			public void modifyText(ModifyEvent e) {
@@ -237,7 +325,7 @@ class ReviewRequestPublishPage extends WizardPage {
 				getContainer().updateButtons();
 			}
 		});
-		
+
 		// add event listeners after the above logic
 		toGroupText.addModifyListener(new ModifyListener() {
 
@@ -248,7 +336,7 @@ class ReviewRequestPublishPage extends WizardPage {
 				getContainer().updateButtons();
 			}
 		});
-		
+
 		summary.addModifyListener(new ModifyListener() {
 
 			public void modifyText(ModifyEvent e) {
@@ -267,8 +355,7 @@ class ReviewRequestPublishPage extends WizardPage {
 				getContainer().updateButtons();
 			}
 		});
-		
-		
+
 	}
 
 	private void newLabel(Composite layout, String text) {
@@ -320,10 +407,9 @@ class ReviewRequestPublishPage extends WizardPage {
 
 	@Override
 	public void setVisible(boolean visible) {
-
 		if (visible) {
-			_toUserComboAutoCompleteField.setProposals(getUsernames());
-			_toGroupComboAutoCompleteField.setProposals(getGroupNames());
+			// _toUserComboAutoCompleteField.setProposals(getUsernames());
+			// _toGroupComboAutoCompleteField.setProposals(getGroupNames());
 			populate();
 		}
 
@@ -340,12 +426,16 @@ class ReviewRequestPublishPage extends WizardPage {
 
 	private void more() {
 		try {
-			//BusyIndicator.showWhile(Display.getDefault(), new Runnable() {
+			// BusyIndicator.showWhile(Display.getDefault(), new Runnable() {
 			Display.getDefault().asyncExec(new Runnable() {
 				public void run() {
 					moreButton.setEnabled(false);
-					//resetButton.setEnabled(false);
-					
+					resetButton.setText("Loading logs...");
+
+					// resetButton.setFont(font)
+
+					// resetButton.setEnabled(false);
+
 					try {
 						ISVNLocalResource projectSvnResource = SVNWorkspaceRoot.getSVNResourceFor(_context.getProject());
 						ISVNClientAdapter svnClient = _context.getSvnRepositoryLocation().getSVNClient();
@@ -359,19 +449,18 @@ class ReviewRequestPublishPage extends WizardPage {
 						} else {
 							topRevision = SVNRevision.getRevision((topLog.getRevision().getNumber() - 1) + "");
 						}
-						
-						resetButton.setText("Loading logs...");
+
 						logs = svnClient.getLogMessages(projectSvnResource.getFile(), topRevision,
 								SVNRevision.getRevision((topLog.getRevision().getNumber() - Const.PAGING_LOG) + ""),
 								false);
-						
+
 						long newRevision = -1;
 						long oldRevision = -1;
-						if(_context.getReviewType() == Const.REVIEW_POST_COMMIT) {
+						if (_context.getReviewType() == Const.REVIEW_POST_COMMIT) {
 							newRevision = _context.getNewRevision();
 							oldRevision = _context.getOldRevision();
 						}
-						
+
 						int start = -1;
 						int end = -1;
 						for (ISVNLogMessage log : logs) {
@@ -383,55 +472,38 @@ class ReviewRequestPublishPage extends WizardPage {
 							item.setText(idx++, Const.DATE_FORMAT.format(log.getDate()));
 							item.setText(idx++, log.getAuthor());
 							topLog = log;
-							
-							if(log.getRevision().getNumber() == newRevision)
+
+							if (log.getRevision().getNumber() == newRevision)
 								start = tableRowIndex;
-							if(log.getRevision().getNumber() == oldRevision)
+							if (log.getRevision().getNumber() == oldRevision)
 								end = tableRowIndex;
-							
+
 							tableRowIndex++;
 						}
 
 						for (int i = 0; i < _context.getLogsTable().getColumnCount(); i++)
 							_context.getLogsTable().getColumn(i).pack();
-						
-						if(start != -1)
+
+						if (start != -1)
 							_context.getLogsTable().select(start, end);
 					} catch (Exception e) {
 						setErrorMessage(getErrorMessage());
 						Activator.getDefault().log(IStatus.ERROR, e.getMessage(), e);
 						e.printStackTrace();
 					}
-					
+
 					moreButton.setEnabled(true);
 					resetButton.setText(labelReset);
-					//resetButton.setEnabled(true);
+					// resetButton.setEnabled(true);
 					getContainer().updateButtons();
 				}
 			});
 		} catch (Exception e) {
-			e.printStackTrace();
+			MessageDialog.openError(null, "Review Request", e.getMessage());
+			// e.printStackTrace();
 		}
 	}
-
-	private String[] getUsernames() {
-
-		List<String> usernames = new ArrayList<String>();
-		for (User user : _context.getReviewboardClient().getClientData().getUsers())
-			usernames.add(user.getUsername());
-
-		return usernames.toArray(new String[usernames.size()]);
-	}
-
-	private String[] getGroupNames() {
-
-		List<String> groupNames = new ArrayList<String>();
-		for (ReviewGroup group : _context.getReviewboardClient().getClientData().getGroups())
-			groupNames.add(group.getName());
-
-		return groupNames.toArray(new String[groupNames.size()]);
-	}
-
+	
 	public ReviewRequest getReviewRequest() {
 
 		return reviewRequest;

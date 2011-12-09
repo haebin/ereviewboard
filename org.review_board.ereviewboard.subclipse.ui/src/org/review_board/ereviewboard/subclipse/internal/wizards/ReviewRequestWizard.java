@@ -14,11 +14,12 @@ package org.review_board.ereviewboard.subclipse.internal.wizards;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.SubMonitor;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.wizard.Wizard;
@@ -49,8 +50,6 @@ import org.tigris.subversion.svnclientadapter.SVNUrl;
 public class ReviewRequestWizard extends Wizard {
 	public static final int TEXT_WIDTH = 500;
 
-	
-
 	private final ReviewRequestContext _context = new ReviewRequestContext();
 	private DetectSelectChangesPage _detectLocalChangesPage;
 	private ReviewRequestPublishPage _publishReviewRequestPage;
@@ -78,7 +77,7 @@ public class ReviewRequestWizard extends Wizard {
 
 		_publishReviewRequestPage = new ReviewRequestPublishPage(_context);
 		addPage(_publishReviewRequestPage);
-		
+
 		if (_context.getReviewRequest() != null) {
 			_updateReviewRequestPage = new ReviewRequestUpdatePage();
 			addPage(_updateReviewRequestPage);
@@ -167,6 +166,14 @@ public class ReviewRequestWizard extends Wizard {
 						if (_context.getReviewRequest() == null) {
 							reviewRequestForUpdate = _publishReviewRequestPage.getReviewRequest();
 							reviewRequestForUpdate.setId(reviewRequest.getId());
+							
+							// #TODO check working status.
+							// new request. save prev.
+							// save!
+							Platform.getPreferencesService().getRootNode().put("ereviewboard.previous.reviewer", reviewRequestForUpdate.getTargetPeopleText());
+							Platform.getPreferencesService().getRootNode().put("ereviewboard.previous.group", reviewRequestForUpdate.getTargetGroupsText());
+							Platform.getPreferencesService().getRootNode().put("ereviewboard.previous.summary", reviewRequestForUpdate.getSummary());
+							
 						} else {
 							reviewRequestForUpdate = _context.getReviewRequest();
 							changeDescription = _updateReviewRequestPage.getChangeDescription();
@@ -223,10 +230,7 @@ public class ReviewRequestWizard extends Wizard {
 		contents.append(descParts[0]);
 
 		// parse contents for [id]
-		m = Const.PATTERN_BUG_ID.matcher(descParts[0]);
-		while (m.find()) {
-			bugsClosed.add(m.group(1).trim());
-		}
+		parseBugIds(bugsClosed, descParts[0]);
 		
 		contents.append(Const.CONTENTS_DIV);
 		if (_context.getReviewType() == Const.REVIEW_POST_COMMIT) {
@@ -252,16 +256,22 @@ public class ReviewRequestWizard extends Wizard {
 			contents.append(Const.EOL);
 
 			itemLog = log.getMessage().trim();
-			m = Const.PATTERN_BUG_ID.matcher(itemLog);
-			while (m.find()) {
-				bugsClosed.add(m.group(1).trim());
-			}
-
+			parseBugIds(bugsClosed, itemLog);
+			
 			contents.append(itemLog);
 			contents.append(Const.EOL);
 		}
 
 		request.setDescription(contents.toString());
 		request.setBugsClosed(new ArrayList(new HashSet(bugsClosed)));
+	}
+ 
+	public void parseBugIds(ArrayList<String> bugsClosed, String str) {
+		for(Pattern pattern: Const.PATTERN_BUGID) {
+			Matcher m = pattern.matcher(str);
+			while (m.find()) {
+				bugsClosed.add(m.group(1).trim());
+			}
+		}
 	}
 }

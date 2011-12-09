@@ -113,41 +113,54 @@ public class SelectionTree extends Composite {
 
 	private final static int SPACEBAR = 32;
 
-	public SelectionTree(Composite parent, int style, String label, IResource[] resources, LabelProvider labelProvider,
+	public SelectionTree(Composite parent, int style, String label, LabelProvider labelProvider,
 			boolean checkbox, IToolbarControlCreator toolbarControlCreator, SyncInfoSet syncInfoSet) {
 		super(parent, style);
 		this.label = label;
-		this.resources = resources;
-		this.statusMap = new HashMap<IResource, ResourceStatus>();
 		this.labelProvider = labelProvider;
 		this.checkbox = checkbox;
 		this.toolbarControlCreator = toolbarControlCreator;
 		this.syncInfoSet = syncInfoSet;
 		this.settings = SVNUIPlugin.getPlugin().getDialogSettings();
+		
+		this.statusMap = new HashMap<IResource, ResourceStatus>();
+		this.unmodifiedResourceList = new HashSet();
+		this.resourceList = new ArrayList();
+		this.resources = new IResource[0];
+		createControls();
+	}
+	
+	public void setResources(IResource[] resources) {
+		//this.resources = resources;
 		if (resources != null) {
 			Arrays.sort(resources, comparator);
-			resourceList = new ArrayList();
-
+			//this.resourceList = new ArrayList();
+			//this.resourceList.rem
 			// #FIXME the default is showing only files with diffs. so the
 			// following logic is insanely stupid.
 			// #FIXME do it in the other way around.
-			unmodifiedResourceList = new HashSet();
+			
 			try {
 				for (int i = 0; i < resources.length; i++) {
 					IResource resource = resources[i];
 					ISVNLocalResource svnResource = SVNWorkspaceRoot.getSVNResourceFor(resource);
 					statusMap.put(resource, svnResource.getStatus());
 
-					resourceList.add(resource);
+					// DEFAULT: full resources - unmodified
 					if (SVNStatusKind.NORMAL.equals(svnResource.getStatus().getTextStatus())) {
 						unmodifiedResourceList.add(resource);
+					} else {
+						resourceList.add(resource);
 					}
 				}
 			} catch (Exception e) {
 				SVNUIPlugin.openError(getShell(), null, null, e);
 			}
 		}
-		createControls();
+		this.resources = new IResource[resourceList.size()];
+		resourceList.toArray(this.resources);
+		
+		refresh();
 	}
 
 	public TreeViewer getTreeViewer() {
@@ -587,9 +600,9 @@ public class SelectionTree extends Composite {
 		treeViewer.expandAll();
 		if (checkbox)
 			((CheckboxTreeViewer) treeViewer).setCheckedElements(checkedElements);
-		if (checkbox && mode == MODE_TREE) {
-			treeViewer.collapseAll();
-		}
+//		if (checkbox && mode == MODE_TREE) {
+//			treeViewer.collapseAll();
+//		}
 	}
 
 	private IContainer[] getRootFolders() {
