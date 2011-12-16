@@ -1,11 +1,11 @@
-package org.review_board.ereviewboard.subclipse.ui.util;
+package org.review_board.ereviewboard.ui.util;
 
 import java.util.ArrayList;
 
 import org.eclipse.jface.fieldassist.IContentProposal;
 import org.eclipse.jface.fieldassist.IContentProposalProvider;
 
-public class TargetContentProposalProvider implements IContentProposalProvider {
+public class RealTimeContentProposalProvider implements IContentProposalProvider {
 	/*
 	 * The proposals provided.
 	 */
@@ -21,6 +21,7 @@ public class TargetContentProposalProvider implements IContentProposalProvider {
 	 * Boolean that tracks whether filtering is used.
 	 */
 	private boolean filterProposals = false;
+	private boolean isMulti = true;
 
 	/**
 	 * Construct a SimpleContentProposalProvider whose content proposals are
@@ -30,9 +31,10 @@ public class TargetContentProposalProvider implements IContentProposalProvider {
 	 *            the array of Strings to be returned whenever proposals are
 	 *            requested.
 	 */
-	public TargetContentProposalProvider(String[] proposals) {
+	public RealTimeContentProposalProvider(String[] proposals, boolean isMulti) {
 		super();
 		this.proposals = proposals;
+		this.isMulti = isMulti;
 	}
 
 	/**
@@ -49,11 +51,15 @@ public class TargetContentProposalProvider implements IContentProposalProvider {
 	 */
 	public IContentProposal[] getProposals(String contents, int position) {
 		// no input key yet since multi input is possible.
-		if(contents.trim().endsWith(","))
+		if(isMulti && contents.trim().endsWith(","))
 			return new IContentProposal[] {};
 		// get input key
-		String[] arr = contents.split(",");
-		contents = arr[arr.length-1].trim();
+		if(isMulti) {
+		    String[] arr = contents.split(",");
+		    contents = arr[arr.length-1].trim();
+		} else {
+		    //contents as-is
+		}
 		
 		if (filterProposals) {
 			ArrayList list = new ArrayList();

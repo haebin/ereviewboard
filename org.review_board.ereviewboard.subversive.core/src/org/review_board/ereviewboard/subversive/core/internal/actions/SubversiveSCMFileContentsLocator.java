@@ -7,7 +7,6 @@
  *
  * Contributors:
  *     Frederick Haebin Na - Subversive implementation
- *     Robert Munteanu - initial API and implementation
  *******************************************************************************/
 package org.review_board.ereviewboard.subversive.core.internal.actions;
 

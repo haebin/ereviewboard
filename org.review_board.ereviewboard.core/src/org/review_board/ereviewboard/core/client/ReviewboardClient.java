@@ -44,6 +44,7 @@ import org.apache.commons.httpclient.HttpClient;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.mylyn.tasks.core.TaskRepository;
+import org.json.JSONObject;
 import org.review_board.ereviewboard.core.exception.ReviewboardException;
 import org.review_board.ereviewboard.core.model.Diff;
 import org.review_board.ereviewboard.core.model.DiffComment;
@@ -151,4 +152,6 @@ public interface ReviewboardClient {
     DiffComment createDiffComment(int reviewRequestId, int reviewId, int fileDiffId, DiffComment diffComment, IProgressMonitor monitor) throws ReviewboardException;
 
     void deleteReviewDraft(int reviewRequestId, IProgressMonitor monitor) throws ReviewboardException;
+    
+    JSONObject queryRealTime(String userText, String query);
 }

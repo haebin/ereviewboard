@@ -40,6 +40,7 @@ package org.review_board.ereviewboard.ui;
 import java.lang.reflect.InvocationTargetException;
 
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.operation.IRunnableContext;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.viewers.ComboViewer;
@@ -62,7 +63,7 @@ public final class ReviewboardUiUtil {
             comboViewer.getCombo().select(0);
         }
     }
-    
+
     public static void selectComboItemByValue(ComboViewer comboViewer, String value) {
 
         for (int i = 0; i < comboViewer.getCombo().getItemCount(); i++) {
@@ -74,10 +75,13 @@ public final class ReviewboardUiUtil {
     }
 
     /**
-     * Refreshes the repository data using the specified <tt>runnableContext</tt>
+     * Refreshes the repository data using the specified
+     * <tt>runnableContext</tt>
      * 
-     * <p>If the <tt>runnableConext</tt> is null, a platform service will be used to indicate
-     * that the runnable is executing.</p>
+     * <p>
+     * If the <tt>runnableConext</tt> is null, a platform service will be used
+     * to indicate that the runnable is executing.
+     * </p>
      * 
      * @param client the client, must not be <code>null</code>
      * @param runnableContext the runnable context, possibly <code>null</code>
@@ -101,6 +105,9 @@ public final class ReviewboardUiUtil {
             else
                 PlatformUI.getWorkbench().getProgressService().busyCursorWhile(runnable);
         } catch (InvocationTargetException e) {
+            MessageDialog
+                    .openWarning(
+                            null, "Repository Update", "Check your ReviewBoard login credential from [Task Repositories] view.");
             throw new RuntimeException(e);
         } catch (InterruptedException e) {
             return;

@@ -567,7 +567,8 @@ class DetectSelectChangesPage extends WizardPage {
 		}
 
 		if (!hasSvnRepos) {
-			setMessage("No Subversion repositories are defined in the configured ReviewBoard servers. Please add the correspoding repositories to ReviewBoard.");
+			MessageDialog.openWarning(getShell(), "Review Request", "No Subversion repositories are defined in the configured ReviewBoard servers. Please add the correspoding repositories to ReviewBoard.");
+			//setMessage("No Subversion repositories are defined in the configured ReviewBoard servers. Please add the correspoding repositories to ReviewBoard.");
 			return;
 		}
 

@@ -11,18 +11,10 @@
  *******************************************************************************/
 package org.review_board.ereviewboard.subclipse.internal.wizards;
 
-import java.net.URLEncoder;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
-import org.eclipse.core.runtime.preferences.IEclipsePreferences;
-import org.eclipse.core.runtime.preferences.IPreferencesService;
 import org.eclipse.jface.dialogs.IMessageProvider;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.fieldassist.TextContentAdapter;
@@ -48,13 +40,11 @@ import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.review_board.ereviewboard.core.model.ReviewGroup;
 import org.review_board.ereviewboard.core.model.ReviewRequest;
-import org.review_board.ereviewboard.core.model.User;
 import org.review_board.ereviewboard.subclipse.Activator;
 import org.review_board.ereviewboard.subclipse.internal.common.Const;
 import org.review_board.ereviewboard.subclipse.internal.common.ReviewRequestContext;
-import org.review_board.ereviewboard.subclipse.ui.util.TargetAutoCompleteField;
+import org.review_board.ereviewboard.ui.util.RealTimeAutoCompleteField;
 import org.tigris.subversion.subclipse.core.ISVNLocalResource;
 import org.tigris.subversion.subclipse.core.resources.SVNWorkspaceRoot;
 import org.tigris.subversion.svnclientadapter.ISVNClientAdapter;
@@ -68,8 +58,8 @@ import org.tigris.subversion.svnclientadapter.SVNRevision;
  */
 class ReviewRequestPublishPage extends WizardPage {
 
-	private TargetAutoCompleteField _toUserComboAutoCompleteField;
-	private TargetAutoCompleteField _toGroupComboAutoCompleteField;
+	private RealTimeAutoCompleteField _toUserComboAutoCompleteField;
+	private RealTimeAutoCompleteField _toGroupComboAutoCompleteField;
 	private ReviewRequest reviewRequest = new ReviewRequest();
 	// private Table table;
 	private boolean populated = false;
@@ -94,8 +84,8 @@ class ReviewRequestPublishPage extends WizardPage {
 		_context = context;
 	}
 
-	public void createControl(Composite parent) {
 
+	public void createControl(Composite parent) {
 		Composite layout = new Composite(parent, SWT.NONE);
 
 		GridLayoutFactory.fillDefaults().numColumns(2).applyTo(layout);
@@ -105,29 +95,15 @@ class ReviewRequestPublishPage extends WizardPage {
 		final Text toUserText = newText(layout);
 		// get default in order to avoid sending queries to the server
 		toUserText.setText(Platform.getPreferencesService().getRootNode().get("ereviewboard.previous.reviewer", ""));
-		
-		_toUserComboAutoCompleteField = new TargetAutoCompleteField(toUserText, new TextContentAdapter(),
-				new String[] {});
+
+		_toUserComboAutoCompleteField = new RealTimeAutoCompleteField(toUserText, new TextContentAdapter(),
+				new String[] {}, true);
 		toUserText.addKeyListener(new KeyListener() {
 			public void keyReleased(KeyEvent e) {
-				String userText = toUserText.getText().trim();
-				if (toUserText.getText() == null || userText.length() < Const.MIN_KEY_SIZE || userText.endsWith(","))
-					return;
-
-				String[] args = userText.split(",");
-				String arg = args[args.length - 1].trim();
-
-				if (arg.length() < Const.MIN_KEY_SIZE)
-					return;
-
 				String[] resultNames = null;
 				try {
-					HttpClient hc = _context.getReviewboardClient().getHttpClient();
-					GetMethod method = new GetMethod(_context.getTaskRepository().getUrl()
-							+ "/api/users/?limit=10&fullname=1&timestamp=" + System.currentTimeMillis() + "&q="
-							+ URLEncoder.encode(arg.trim(), "UTF-8"));
-					int resCode = hc.executeMethod(method);
-					JSONObject res = new JSONObject(method.getResponseBodyAsString());
+					JSONObject res = _context.getReviewboardClient().queryRealTime(toUserText.getText(), _context.getTaskRepository().getUrl()
+							+ "/api/users/?limit=10&fullname=1&timestamp=" + System.currentTimeMillis() + "&q=");
 					JSONArray arr = res.getJSONArray("users");
 					resultNames = new String[arr.length()];
 					String korName = "";
@@ -158,28 +134,14 @@ class ReviewRequestPublishPage extends WizardPage {
 		final Text toGroupText = newText(layout);
 		// get default in order to avoid sending queries to the server
 		toGroupText.setText(Platform.getPreferencesService().getRootNode().get("ereviewboard.previous.group", ""));
-		_toGroupComboAutoCompleteField = new TargetAutoCompleteField(toGroupText, new TextContentAdapter(),
-				new String[] {});
+		_toGroupComboAutoCompleteField = new RealTimeAutoCompleteField(toGroupText, new TextContentAdapter(),
+				new String[] {}, true);
 		toGroupText.addKeyListener(new KeyListener() {
 			public void keyReleased(KeyEvent e) {
-				String userText = toGroupText.getText().trim();
-				if (toGroupText.getText() == null || userText.length() < Const.MIN_KEY_SIZE || userText.endsWith(","))
-					return;
-
-				String[] args = userText.split(",");
-				String arg = args[args.length - 1].trim();
-
-				if (arg.length() < Const.MIN_KEY_SIZE)
-					return;
-
 				String[] resultNames = null;
 				try {
-					HttpClient hc = _context.getReviewboardClient().getHttpClient();
-					GetMethod method = new GetMethod(_context.getTaskRepository().getUrl()
-							+ "/api/groups/?limit=10&displayname=1&timestamp=" + System.currentTimeMillis() + "&q="
-							+ URLEncoder.encode(arg.trim(), "UTF-8"));
-					int resCode = hc.executeMethod(method);
-					JSONObject res = new JSONObject(method.getResponseBodyAsString());
+					JSONObject res = _context.getReviewboardClient().queryRealTime(toGroupText.getText(), _context.getTaskRepository().getUrl()
+							+ "/api/groups/?limit=10&displayname=1&timestamp=" + System.currentTimeMillis() + "&q=");
 					JSONArray arr = res.getJSONArray("groups");
 					resultNames = new String[arr.length()];
 					String korName = "";
@@ -214,7 +176,7 @@ class ReviewRequestPublishPage extends WizardPage {
 		newLabel(layout, "");
 		newLabel(layout, "Select commit logs to add to descripton. [ID], #ID will be parsed as bug IDs.");
 		moreButton = new Button(layout, SWT.NONE);
-		moreButton.setText("More ▶");
+		moreButton.setText("More");
 		moreButton.addMouseListener(new MouseListener() {
 
 			public void mouseDoubleClick(MouseEvent e) {
@@ -279,7 +241,7 @@ class ReviewRequestPublishPage extends WizardPage {
 
 		TableColumn commentColumn = new TableColumn(_context.getLogsTable(), SWT.NONE);
 		commentColumn.setText("Comment");
-		commentColumn.setWidth(250);
+		commentColumn.setWidth(200);
 
 		TableColumn dateColumn = new TableColumn(_context.getLogsTable(), SWT.NONE);
 		dateColumn.setText("Date");
@@ -503,7 +465,7 @@ class ReviewRequestPublishPage extends WizardPage {
 			// e.printStackTrace();
 		}
 	}
-	
+
 	public ReviewRequest getReviewRequest() {
 
 		return reviewRequest;

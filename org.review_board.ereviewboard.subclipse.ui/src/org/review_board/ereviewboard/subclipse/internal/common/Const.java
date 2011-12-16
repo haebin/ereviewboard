@@ -22,6 +22,4 @@ public class Const {
 	public static final String CONTENTS_DIV = Const.EOL + Const.EOL + Const.EOL + "--------------------------------------------------"
 			+ Const.EOL;
 	public static final String INFO_POST_COMMIT = "Post-commit review for diff from revision ";
-	
-	public static final int MIN_KEY_SIZE = 1;
 }

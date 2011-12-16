@@ -52,6 +52,7 @@ import static org.review_board.ereviewboard.core.client.ReviewboardQueryBuilder.
 import static org.review_board.ereviewboard.core.client.ReviewboardQueryBuilder.PATH_USERS;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -61,12 +62,15 @@ import java.util.Map;
 import java.util.TimeZone;
 
 import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.methods.GetMethod;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.mylyn.commons.net.AbstractWebLocation;
 import org.eclipse.mylyn.commons.net.Policy;
 import org.eclipse.mylyn.tasks.core.TaskRepository;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.review_board.ereviewboard.core.ReviewboardCorePlugin;
 import org.review_board.ereviewboard.core.exception.ReviewboardException;
 import org.review_board.ereviewboard.core.exception.ReviewboardObjectDoesNotExistException;
@@ -95,6 +99,7 @@ import org.review_board.ereviewboard.core.model.User;
 public class RestfulReviewboardClient implements ReviewboardClient {
     
     private static final int PAGED_RESULT_INCREMENT = 50;
+    private static final int MIN_KEY_SIZE = 1;
 
     private static String asBooleanParameter(boolean parameter) {
         
@@ -434,7 +439,7 @@ public class RestfulReviewboardClient implements ReviewboardClient {
                 
                 //clientData.setGroups(getReviewGroups(Policy.subMonitorFor(monitor, 5)));
             
-                //clientData.setRepositories(getRepositories(Policy.subMonitorFor(monitor, 4)));
+                clientData.setRepositories(getRepositories(Policy.subMonitorFor(monitor, 4)));
                 
                 clientData.setTimeZone(getTimeZone(Policy.subMonitorFor(monitor, 1)));
             
@@ -666,4 +671,29 @@ public class RestfulReviewboardClient implements ReviewboardClient {
     public HttpClient getHttpClient() {
         return httpClient.getHttpClient();
     }
+    
+    public JSONObject queryRealTime(String userText, String query) {
+        if (userText.length() < MIN_KEY_SIZE || userText.endsWith(","))
+            return null;
+
+        String[] args = userText.split(",");
+        // Only do the query for the user at the end.
+        String arg = args[args.length - 1].trim();
+
+        if (arg.length() < MIN_KEY_SIZE)
+            return null;
+
+        try {
+            HttpClient hc = httpClient.getHttpClient();
+            GetMethod method = new GetMethod(query + URLEncoder.encode(arg.trim(), "UTF-8"));
+            int resCode = hc.executeMethod(method);
+            // #TODO exception handling
+
+            return new JSONObject(method.getResponseBodyAsString());
+        } catch (Exception ex) {
+            // #TODO handle excepton properly
+            ex.printStackTrace();
+        }
+        return null;
+    } 
 }
