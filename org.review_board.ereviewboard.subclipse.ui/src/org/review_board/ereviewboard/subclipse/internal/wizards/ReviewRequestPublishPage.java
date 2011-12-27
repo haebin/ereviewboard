@@ -84,7 +84,6 @@ class ReviewRequestPublishPage extends WizardPage {
 		_context = context;
 	}
 
-
 	public void createControl(Composite parent) {
 		Composite layout = new Composite(parent, SWT.NONE);
 
@@ -102,8 +101,10 @@ class ReviewRequestPublishPage extends WizardPage {
 			public void keyReleased(KeyEvent e) {
 				String[] resultNames = null;
 				try {
-					JSONObject res = _context.getReviewboardClient().queryRealTime(toUserText.getText(), _context.getTaskRepository().getUrl()
-							+ "/api/users/?limit=10&fullname=1&timestamp=" + System.currentTimeMillis() + "&q=");
+					JSONObject res = _context.getReviewboardClient().queryRealTime(
+							toUserText.getText(),
+							_context.getTaskRepository().getUrl() + "/api/users/?limit=10&fullname=1&timestamp="
+									+ System.currentTimeMillis() + "&q=");
 					JSONArray arr = res.getJSONArray("users");
 					resultNames = new String[arr.length()];
 					String korName = "";
@@ -140,8 +141,10 @@ class ReviewRequestPublishPage extends WizardPage {
 			public void keyReleased(KeyEvent e) {
 				String[] resultNames = null;
 				try {
-					JSONObject res = _context.getReviewboardClient().queryRealTime(toGroupText.getText(), _context.getTaskRepository().getUrl()
-							+ "/api/groups/?limit=10&displayname=1&timestamp=" + System.currentTimeMillis() + "&q=");
+					JSONObject res = _context.getReviewboardClient().queryRealTime(
+							toGroupText.getText(),
+							_context.getTaskRepository().getUrl() + "/api/groups/?limit=10&displayname=1&timestamp="
+									+ System.currentTimeMillis() + "&q=");
 					JSONArray arr = res.getJSONArray("groups");
 					resultNames = new String[arr.length()];
 					String korName = "";
@@ -234,22 +237,21 @@ class ReviewRequestPublishPage extends WizardPage {
 		});
 
 		GridDataFactory.fillDefaults().span(2, 1).hint(500, 400).applyTo(_context.getLogsTable());
-
 		TableColumn revisionColumn = new TableColumn(_context.getLogsTable(), SWT.NONE);
 		revisionColumn.setText("Rev");
-		// revisionColumn.setWidth(20);
+		revisionColumn.setWidth(50);
 
 		TableColumn commentColumn = new TableColumn(_context.getLogsTable(), SWT.NONE);
 		commentColumn.setText("Comment");
-		commentColumn.setWidth(200);
+		commentColumn.setWidth(330);
 
 		TableColumn dateColumn = new TableColumn(_context.getLogsTable(), SWT.NONE);
 		dateColumn.setText("Date");
-		// dateColumn.setWidth(100);
+		dateColumn.setWidth(120);
 
 		TableColumn authorColumn = new TableColumn(_context.getLogsTable(), SWT.NONE);
 		authorColumn.setText("Author");
-		// authorColumn.setWidth(100);
+		authorColumn.setWidth(100);
 
 		_context.getLogsTable().setLinesVisible(true);
 		_context.getLogsTable().setHeaderVisible(true);
@@ -405,16 +407,29 @@ class ReviewRequestPublishPage extends WizardPage {
 						ISVNLogMessage[] logs = null;
 						SVNRevision topRevision = null;
 						if (topLog == null) {
-							topLog = svnClient.getLogMessages(projectSvnResource.getUrl(), SVNRevision.HEAD,
-									SVNRevision.HEAD, false)[0];
+							SVNRevision latest = projectSvnResource.getLatestRemoteResource().getLastChangedRevision();
+							ISVNLogMessage[] tempLogs = svnClient.getLogMessages(projectSvnResource.getUrl(), latest,
+									latest, false);
+							if (tempLogs == null || tempLogs.length == 0) {
+								moreButton.setEnabled(true);
+								resetButton.setText(labelReset);
+								// resetButton.setEnabled(true);
+								getContainer().updateButtons();
+
+								return;
+							}
+
+							topLog = tempLogs[0];
 							topRevision = SVNRevision.getRevision(topLog.getRevision().getNumber() + "");
 						} else {
 							topRevision = SVNRevision.getRevision((topLog.getRevision().getNumber() - 1) + "");
 						}
 
-						logs = svnClient.getLogMessages(projectSvnResource.getFile(), topRevision,
-								SVNRevision.getRevision((topLog.getRevision().getNumber() - Const.PAGING_LOG) + ""),
-								false);
+						// projectSvnResource.getLatestRemoteResource().getLogMessages(pegRevision,
+						// revisionStart, revisionEnd, stopOnCopy,
+						// fetchChangePath, limit, includeMergedRevisions)
+						logs = svnClient.getLogMessages(projectSvnResource.getUrl(), SVNRevision.HEAD, topRevision,
+								SVNRevision.getRevision("1"), false, false, Const.PAGING_LOG);
 
 						long newRevision = -1;
 						long oldRevision = -1;
@@ -443,9 +458,6 @@ class ReviewRequestPublishPage extends WizardPage {
 							tableRowIndex++;
 						}
 
-						for (int i = 0; i < _context.getLogsTable().getColumnCount(); i++)
-							_context.getLogsTable().getColumn(i).pack();
-
 						if (start != -1)
 							_context.getLogsTable().select(start, end);
 					} catch (Exception e) {
@@ -453,11 +465,11 @@ class ReviewRequestPublishPage extends WizardPage {
 						Activator.getDefault().log(IStatus.ERROR, e.getMessage(), e);
 						e.printStackTrace();
 					}
-
 					moreButton.setEnabled(true);
 					resetButton.setText(labelReset);
 					// resetButton.setEnabled(true);
 					getContainer().updateButtons();
+
 				}
 			});
 		} catch (Exception e) {
