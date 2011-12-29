@@ -520,7 +520,10 @@ public class RestfulReviewboardClient implements ReviewboardClient {
             if ( !serverInfo.isAtLeast(1, 5) )
                 return new Status(IStatus.ERROR, ReviewboardCorePlugin.PLUGIN_ID, "The version " + serverInfo.getProductVersion() + " is not supported. Please use a repository version of 1.5 or newer.");
             
+            // Do repository update since this would be more preferable spot to do it.
+            updateRepositoryData(true, monitor);
             return Status.OK_STATUS;
+            
         } catch ( ReviewboardException e ) {
             return new Status(IStatus.ERROR, ReviewboardCorePlugin.PLUGIN_ID, e.getMessage(), e);
         } catch (Exception e) {
