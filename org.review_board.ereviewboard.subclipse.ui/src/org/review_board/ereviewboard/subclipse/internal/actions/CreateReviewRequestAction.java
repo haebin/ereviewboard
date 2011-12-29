@@ -23,6 +23,8 @@ import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.review_board.ereviewboard.core.ReviewboardCorePlugin;
+import org.review_board.ereviewboard.subclipse.internal.common.Const;
+import org.review_board.ereviewboard.subclipse.internal.common.WindowUtility;
 import org.review_board.ereviewboard.subclipse.internal.wizards.ReviewRequestWizard;
 
 /**
@@ -46,29 +48,10 @@ public class CreateReviewRequestAction implements IActionDelegate {
 							"Review Request", "No [ReviewBoard Task Repositories] are defined. Please add one using the [Task Repositories View]."); //$NON-NLS-1$ //$NON-NLS-2$
 			return;
 		}
-
-		IWorkbench wb = PlatformUI.getWorkbench();
-		IWorkbenchWindow win = wb.getActiveWorkbenchWindow();
-
+		
 		ReviewRequestWizard wizard = new ReviewRequestWizard(currentProject);
-		WizardDialog dialog = new WizardDialog(win.getShell(), wizard) {
-			@Override
-			protected void configureShell(Shell newShell) {
-				super.configureShell(newShell);
-				newShell.setSize(620, 600);
-				Point point = newShell.getParent().getLocation();
-				Point size = newShell.getParent().getSize();
-				
-				point.x = point.x + size.x/2;
-				point.y = point.y + size.y/2;
-				
-				point.x = point.x - 320;
-				point.y = point.y - 300;
-				newShell.setLocation(point);
-			}
-		};
-		dialog.create();
-		int ok = dialog.open();
+		
+		int ok  = WindowUtility.open(wizard, Const.DEFAULT_WIDTH, Const.DEFAULT_WIDTH);
 	}
 
 	public void selectionChanged(IAction action, ISelection selection) {

@@ -4,6 +4,9 @@ import java.text.SimpleDateFormat;
 import java.util.regex.Pattern;
 
 public class Const {
+	public static final int DEFAULT_WIDTH = 620;
+	public static final int DEFAULT_HEIGHT = 600;
+	
 	public static final String DEFAULT_ENCODING = "UTF-8";
 
 	public static final String EOL = "\r\n";
@@ -22,4 +25,6 @@ public class Const {
 	public static final String CONTENTS_DIV = Const.EOL + Const.EOL + Const.EOL + "--------------------------------------------------"
 			+ Const.EOL;
 	public static final String INFO_POST_COMMIT = "Post-commit review for diff from revision ";
+	
+	
 }

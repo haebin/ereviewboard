@@ -29,6 +29,8 @@ import org.review_board.ereviewboard.core.model.RepositoryType;
 import org.review_board.ereviewboard.core.model.ReviewRequest;
 import org.review_board.ereviewboard.subclipse.Activator;
 import org.review_board.ereviewboard.subclipse.TraceLocation;
+import org.review_board.ereviewboard.subclipse.internal.common.Const;
+import org.review_board.ereviewboard.subclipse.internal.common.WindowUtility;
 import org.review_board.ereviewboard.subclipse.internal.wizards.ReviewRequestWizard;
 import org.review_board.ereviewboard.ui.editor.ext.TaskDiffAction;
 
@@ -80,12 +82,12 @@ public class UpdateReviewRequestAction implements TaskDiffAction {
                 return new Status(IStatus.WARNING, Activator.PLUGIN_ID, "Could not find a matching project for the resources in the review request.");
             
             ReviewRequest reviewRequest = client.getReviewRequest(reviewRequestId, monitor);
-            
-            IWorkbench wb = PlatformUI.getWorkbench();
-            
-            IWorkbenchWindow win = wb.getActiveWorkbenchWindow();
-            
-            new WizardDialog(win.getShell(), new ReviewRequestWizard(matchingProject, reviewRequest)).open();
+            WindowUtility.open(new ReviewRequestWizard(matchingProject, reviewRequest), Const.DEFAULT_WIDTH, Const.DEFAULT_HEIGHT);
+//            IWorkbench wb = PlatformUI.getWorkbench();
+//            
+//            IWorkbenchWindow win = wb.getActiveWorkbenchWindow();
+//            
+//            new WizardDialog(win.getShell(), new ReviewRequestWizard(matchingProject, reviewRequest)).open();
 
             return Status.OK_STATUS;
         } catch (ReviewboardException e) {
