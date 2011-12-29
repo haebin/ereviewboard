@@ -16,7 +16,7 @@ public class Const {
 
 	public static final Pattern[] PATTERN_BUGID = { Pattern.compile("\\[([^\\].]*)\\]"),  Pattern.compile("#([a-zA-Z0-9]+)") };
 
-	public static final int PAGING_LOG = 15;
+	public static final int PAGING_LOG = 10;
 
 	public static final int REVIEW_PRE_COMMIT = 0;
 	public static final int REVIEW_POST_COMMIT = 1;

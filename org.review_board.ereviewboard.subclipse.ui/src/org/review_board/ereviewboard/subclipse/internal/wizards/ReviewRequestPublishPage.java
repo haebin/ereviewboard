@@ -251,7 +251,7 @@ class ReviewRequestPublishPage extends WizardPage {
 
 		TableColumn authorColumn = new TableColumn(_context.getLogsTable(), SWT.NONE);
 		authorColumn.setText("Author");
-		authorColumn.setWidth(100);
+		authorColumn.setWidth(80);
 
 		_context.getLogsTable().setLinesVisible(true);
 		_context.getLogsTable().setHeaderVisible(true);
