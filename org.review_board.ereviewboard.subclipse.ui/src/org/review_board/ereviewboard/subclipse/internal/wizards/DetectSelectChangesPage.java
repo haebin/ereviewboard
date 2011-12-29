@@ -555,12 +555,11 @@ class DetectSelectChangesPage extends WizardPage {
 				if (repository.getTool() != RepositoryType.Subversion)
 					continue;
 
-				hasSvnRepos = true;
-
 				if (context.getSvnRepositoryLocation().getRepositoryRoot().toString().equals(repository.getPath())) {
 					reviewBoardRepository = repository;
 					taskRepository = repositoryCandidate;
 					rbClient = client;
+					hasSvnRepos = true;
 					break;
 				}
 			}
