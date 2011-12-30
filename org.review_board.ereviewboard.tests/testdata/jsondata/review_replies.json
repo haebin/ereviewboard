@@ -1,0 +1,54 @@
+{
+  "links": {
+    "create": {
+      "href": "http:\/\/reviews.example.com\/api\/review-requests\/8\/reviews\/8\/replies\/", 
+      "method": "POST"
+    }, 
+    "reply_draft": {
+      "href": "http:\/\/reviews.example.com\/api\/review-requests\/8\/reviews\/8\/replies\/draft\/", 
+      "method": "GET"
+    }, 
+    "self": {
+      "href": "http:\/\/reviews.example.com\/api\/review-requests\/8\/reviews\/8\/replies\/", 
+      "method": "GET"
+    }
+  }, 
+  "replies": [
+    {
+      "body_bottom": "", 
+      "body_top": "Excellent point.", 
+      "id": 10, 
+      "links": {
+        "delete": {
+          "href": "http:\/\/reviews.example.com\/api\/review-requests\/8\/reviews\/8\/replies\/10\/", 
+          "method": "DELETE"
+        }, 
+        "diff_comments": {
+          "href": "http:\/\/reviews.example.com\/api\/review-requests\/8\/reviews\/8\/replies\/10\/diff-comments\/", 
+          "method": "GET"
+        }, 
+        "screenshot_comments": {
+          "href": "http:\/\/reviews.example.com\/api\/review-requests\/8\/reviews\/8\/replies\/10\/screenshot-comments\/", 
+          "method": "GET"
+        }, 
+        "self": {
+          "href": "http:\/\/reviews.example.com\/api\/review-requests\/8\/reviews\/8\/replies\/10\/", 
+          "method": "GET"
+        }, 
+        "update": {
+          "href": "http:\/\/reviews.example.com\/api\/review-requests\/8\/reviews\/8\/replies\/10\/", 
+          "method": "PUT"
+        }, 
+        "user": {
+          "href": "http:\/\/reviews.example.com\/api\/users\/admin\/", 
+          "method": "GET", 
+          "title": "admin"
+        }
+      }, 
+      "public": true, 
+      "timestamp": "2010-08-28 02:26:47"
+    }
+  ], 
+  "stat": "ok", 
+  "total_results": 1
+}
