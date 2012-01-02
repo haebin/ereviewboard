@@ -70,6 +70,11 @@ class ReviewRequestPublishPage extends WizardPage {
 	private Button moreButton;
 	private Button resetButton;
 	private String labelReset = "Selection Reset";
+	
+	private Text _toUserText;
+	private Text _toGroupText;
+	private Text _summary;
+	private Text _description;
 
 	// private IPreferencesService service = Platform.getPreferencesService();
 
@@ -92,6 +97,7 @@ class ReviewRequestPublishPage extends WizardPage {
 		newLabel(layout, "Reviewer:");
 
 		final Text toUserText = newText(layout);
+		_toUserText = toUserText;
 		// get default in order to avoid sending queries to the server
 		toUserText.setText(Platform.getPreferencesService().getRootNode().get("ereviewboard.previous.reviewer", ""));
 
@@ -133,6 +139,7 @@ class ReviewRequestPublishPage extends WizardPage {
 
 		newLabel(layout, "(Or Group):");
 		final Text toGroupText = newText(layout);
+		_toGroupText = toGroupText;
 		// get default in order to avoid sending queries to the server
 		toGroupText.setText(Platform.getPreferencesService().getRootNode().get("ereviewboard.previous.group", ""));
 		_toGroupComboAutoCompleteField = new RealTimeAutoCompleteField(toGroupText, new TextContentAdapter(),
@@ -170,11 +177,13 @@ class ReviewRequestPublishPage extends WizardPage {
 		newLabel(layout, "Summary:");
 
 		final Text summary = newText(layout);
+		_summary = summary;
 		summary.setText(Platform.getPreferencesService().getRootNode().get("ereviewboard.previous.summary", ""));
 
 		newLabel(layout, "Description:");
 
 		final Text description = newMultilineText(layout);
+		_description = description;
 
 		newLabel(layout, "");
 		newLabel(layout, "Select commit logs to add to descripton. [ID], #ID will be parsed as bug IDs.");
@@ -284,7 +293,7 @@ class ReviewRequestPublishPage extends WizardPage {
 
 			public void modifyText(ModifyEvent e) {
 
-				reviewRequest.setTargetPeople(Collections.singletonList(toUserText.getText()));
+				//reviewRequest.setTargetPeople(Collections.singletonList(toUserText.getText()));
 
 				getContainer().updateButtons();
 			}
@@ -295,7 +304,7 @@ class ReviewRequestPublishPage extends WizardPage {
 
 			public void modifyText(ModifyEvent e) {
 
-				reviewRequest.setTargetGroups(Collections.singletonList(toGroupText.getText()));
+				//reviewRequest.setTargetGroups(Collections.singletonList(toGroupText.getText()));
 
 				getContainer().updateButtons();
 			}
@@ -305,7 +314,7 @@ class ReviewRequestPublishPage extends WizardPage {
 
 			public void modifyText(ModifyEvent e) {
 
-				reviewRequest.setSummary(summary.getText());
+				//reviewRequest.setSummary(summary.getText());
 
 				getContainer().updateButtons();
 			}
@@ -314,7 +323,7 @@ class ReviewRequestPublishPage extends WizardPage {
 
 			public void modifyText(ModifyEvent e) {
 
-				reviewRequest.setDescription(description.getText());
+				//reviewRequest.setDescription(description.getText());
 
 				getContainer().updateButtons();
 			}
@@ -347,7 +356,11 @@ class ReviewRequestPublishPage extends WizardPage {
 	}
 
 	private boolean checkValid() {
-
+		reviewRequest.setSummary(_summary.getText());
+		reviewRequest.setDescription(_description.getText());
+		reviewRequest.setTargetGroups(Collections.singletonList(_toGroupText.getText()));
+		reviewRequest.setTargetPeople(Collections.singletonList(_toUserText.getText()));
+		
 		if (reviewRequest.getSummary() == null || reviewRequest.getSummary().length() == 0) {
 			return false;
 		}
