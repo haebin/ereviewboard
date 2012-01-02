@@ -166,14 +166,18 @@ public class ReviewRequestWizard extends Wizard {
 						if (_context.getReviewRequest() == null) {
 							reviewRequestForUpdate = _publishReviewRequestPage.getReviewRequest();
 							reviewRequestForUpdate.setId(reviewRequest.getId());
-							
+
 							// #TODO check working status.
 							// new request. save prev.
 							// save!
-							Platform.getPreferencesService().getRootNode().put("ereviewboard.previous.reviewer", reviewRequestForUpdate.getTargetPeopleText());
-							Platform.getPreferencesService().getRootNode().put("ereviewboard.previous.group", reviewRequestForUpdate.getTargetGroupsText());
-							Platform.getPreferencesService().getRootNode().put("ereviewboard.previous.summary", reviewRequestForUpdate.getSummary());
-							
+							Platform.getPreferencesService()
+									.getRootNode()
+									.put("ereviewboard.previous.reviewer", reviewRequestForUpdate.getTargetPeopleText());
+							Platform.getPreferencesService().getRootNode()
+									.put("ereviewboard.previous.group", reviewRequestForUpdate.getTargetGroupsText());
+							Platform.getPreferencesService().getRootNode()
+									.put("ereviewboard.previous.summary", reviewRequestForUpdate.getSummary());
+
 						} else {
 							reviewRequestForUpdate = _context.getReviewRequest();
 							changeDescription = _updateReviewRequestPage.getChangeDescription();
@@ -231,15 +235,16 @@ public class ReviewRequestWizard extends Wizard {
 
 		// parse contents for [id]
 		parseBugIds(bugsClosed, descParts[0]);
-		
+
 		contents.append(Const.CONTENTS_DIV);
 		if (_context.getReviewType() == Const.REVIEW_POST_COMMIT) {
 			contents.append(Const.INFO_POST_COMMIT);
 
 			long newRev = ((ISVNLogMessage) items[0].getData()).getRevision().getNumber();
 			long oldRev = ((ISVNLogMessage) items[items.length - 1].getData()).getRevision().getNumber();
-			if (items.length == 1)
+			if (items.length == 1) {
 				oldRev = newRev - 1;
+			}
 			contents.append(oldRev + " to " + newRev + ".");
 			contents.append(Const.EOL);
 		}
@@ -257,7 +262,7 @@ public class ReviewRequestWizard extends Wizard {
 
 			itemLog = log.getMessage().trim();
 			parseBugIds(bugsClosed, itemLog);
-			
+
 			contents.append(itemLog);
 			contents.append(Const.EOL);
 		}
@@ -265,9 +270,9 @@ public class ReviewRequestWizard extends Wizard {
 		request.setDescription(contents.toString());
 		request.setBugsClosed(new ArrayList(new HashSet(bugsClosed)));
 	}
- 
+
 	public void parseBugIds(ArrayList<String> bugsClosed, String str) {
-		for(Pattern pattern: Const.PATTERN_BUGID) {
+		for (Pattern pattern : Const.PATTERN_BUGID) {
 			Matcher m = pattern.matcher(str);
 			while (m.find()) {
 				bugsClosed.add(m.group(1).trim());

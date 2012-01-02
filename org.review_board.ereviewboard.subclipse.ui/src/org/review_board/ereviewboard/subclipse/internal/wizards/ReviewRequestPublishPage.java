@@ -400,6 +400,7 @@ class ReviewRequestPublishPage extends WizardPage {
 
 					// resetButton.setEnabled(false);
 
+					int logCnt = 0;
 					try {
 						ISVNLocalResource projectSvnResource = SVNWorkspaceRoot.getSVNResourceFor(_context.getProject());
 						ISVNClientAdapter svnClient = _context.getSvnRepositoryLocation().getSVNClient();
@@ -422,14 +423,16 @@ class ReviewRequestPublishPage extends WizardPage {
 							topLog = tempLogs[0];
 							topRevision = SVNRevision.getRevision(topLog.getRevision().getNumber() + "");
 						} else {
-							topRevision = SVNRevision.getRevision((topLog.getRevision().getNumber() - 1) + "");
+							// revision may not be serial. so, there is no
+							// guarantee for the existence of rev-1.
+							topRevision = topLog.getRevision();
+							logCnt = -1;
 						}
 
-						// projectSvnResource.getLatestRemoteResource().getLogMessages(pegRevision,
-						// revisionStart, revisionEnd, stopOnCopy,
-						// fetchChangePath, limit, includeMergedRevisions)
+						// we are getting one more from the previous bottom log
+						// if this is not the first page. (logCnt == -1)
 						logs = svnClient.getLogMessages(projectSvnResource.getUrl(), SVNRevision.HEAD, topRevision,
-								SVNRevision.getRevision("1"), false, false, Const.PAGING_LOG);
+								SVNRevision.getRevision("1"), false, false, Const.PAGING_LOG + (logCnt == -1 ? 1 : 0));
 
 						long newRevision = -1;
 						long oldRevision = -1;
@@ -441,6 +444,13 @@ class ReviewRequestPublishPage extends WizardPage {
 						int start = -1;
 						int end = -1;
 						for (ISVNLogMessage log : logs) {
+							// if this is not the first page then skip the first
+							// row since it is the dup row from the previous
+							// set.
+							if (logCnt == -1) {
+								continue;
+							}
+							logCnt++;
 							int idx = 0;
 							TableItem item = new TableItem(_context.getLogsTable(), SWT.NONE);
 							item.setData(log);
@@ -458,14 +468,23 @@ class ReviewRequestPublishPage extends WizardPage {
 							tableRowIndex++;
 						}
 
-						if (start != -1)
+						if (start != -1) {
+							// since revision are not serial, this could happen.
+							if (end == -1) {
+								end = start;
+							}
 							_context.getLogsTable().select(start, end);
+						}
 					} catch (Exception e) {
 						setErrorMessage(getErrorMessage());
 						Activator.getDefault().log(IStatus.ERROR, e.getMessage(), e);
 						e.printStackTrace();
 					}
-					moreButton.setEnabled(true);
+
+					// if lest then page size then disable more.
+					if (logCnt == Const.PAGING_LOG) {
+						moreButton.setEnabled(true);
+					}
 					resetButton.setText(labelReset);
 					// resetButton.setEnabled(true);
 					getContainer().updateButtons();

@@ -38,7 +38,7 @@ class ReviewRequestUpdatePage extends WizardPage {
         
         Composite control = new Composite(parent, SWT.NONE);
 
-        GridLayoutFactory.fillDefaults().numColumns(2).applyTo(control);
+        GridLayoutFactory.fillDefaults().numColumns(1).applyTo(control);
         
         Label label = new Label( control, SWT.WRAP);
         GridDataFactory.swtDefaults().align(SWT.BEGINNING, SWT.BEGINNING).applyTo(label);
