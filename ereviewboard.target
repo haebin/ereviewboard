@@ -50,7 +50,7 @@
 </location>
 -->
 <location includeAllPlatforms="false" includeMode="planner" includeSource="true" type="InstallableUnit">
-<unit id="junit.extensions.eclipse.quick.mock.feature.feature.group" version="0.3.0.201104252320"/>
+<unit id="junit.extensions.eclipse.quick.mock.feature.feature.group" version="0.3.0.201201011952"/>
 <repository location="http://quick-junit.sourceforge.jp/updates/current"/>
 </location>
 </locations>
