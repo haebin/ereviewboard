@@ -50,7 +50,7 @@ public class ReviewboardToSvnMapper {
 
         if (candidates.size() == 1)
             return candidates.get(0);
-
+outer:
         // multiple choice - use the latest diff revision to match based on files
         for (IProject project : candidates) {
 
@@ -64,7 +64,7 @@ public class ReviewboardToSvnMapper {
 
             for (FileDiff fileDiff : diffMapper.getFileDiffs(latestDiffRevisionId.intValue())) 
                 if (!fileDiff.getDestinationFile().startsWith(projectRelativePath))
-                    break;
+                    continue outer;
             
             return project;
 
