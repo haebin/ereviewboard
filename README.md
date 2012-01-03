@@ -26,7 +26,7 @@ Dowloads
 --------
 
 * Archived update sites are periodically posted in the [downloads section](ereviewboard/archives/master)
-* A p2 update site is available at [http://rombert.github.com/ereviewboard/update/](http://rombert.github.com/ereviewboard/update/).
+* A p2 update site is available at [http://haebin.github.com/ereviewboard/update/](http://haebin.github.com/ereviewboard/update/).
 
 Builds
 ----------
