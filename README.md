@@ -25,7 +25,6 @@ The development plans are reflected in the [issue tracker](ereviewboard/issues).
 Dowloads
 --------
 
-* Archived update sites are periodically posted in the [downloads section](ereviewboard/archives/master)
 * A p2 update site is available at [http://haebin.github.com/ereviewboard/update/](http://haebin.github.com/ereviewboard/update/).
 
 Builds
